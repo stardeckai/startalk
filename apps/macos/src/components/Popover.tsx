@@ -1,8 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Loader, X } from 'lucide-react';
-
 import { useEffect, useState } from 'react';
 
 interface PopoverData {
@@ -52,7 +50,7 @@ export function Popover() {
   }, []);
 
   const close = () => {
-    getCurrentWindow().hide();
+    invoke('dismiss_popover');
   };
 
   if (!data) {
@@ -82,9 +80,9 @@ export function Popover() {
 
   return (
     <div className="popover-container">
-      <div className="popover-card">
+      <div className="popover-card flex flex-col max-h-[min(400px,100vh)]">
         {/* Header row */}
-        <div className="flex items-center justify-between px-3.5 pt-3 pb-1">
+        <div className="flex items-center justify-between px-3.5 pt-3 pb-1 shrink-0">
           <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">{data.header}</span>
           <button
             type="button"
@@ -97,16 +95,16 @@ export function Popover() {
 
         {/* Original text */}
         {data.original && (
-          <div className="px-3.5 pb-1">
+          <div className="px-3.5 pb-1 shrink-0">
             <p className="text-[12px] text-muted-foreground truncate m-0">{data.original}</p>
           </div>
         )}
 
         {/* Divider */}
-        <div className="mx-3.5 border-t border-border" />
+        <div className="mx-3.5 border-t border-border shrink-0" />
 
-        {/* Result */}
-        <div className="px-3.5 pt-2 pb-3">
+        {/* Result — scrollable */}
+        <div className="px-3.5 pt-2 pb-3 overflow-y-auto min-h-0">
           <p className="text-[14px] text-foreground font-medium leading-relaxed m-0 whitespace-pre-wrap">
             {data.result}
           </p>

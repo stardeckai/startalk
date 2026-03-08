@@ -119,6 +119,7 @@ pub fn run() {
             commands::set_pill_state,
             commands::show_main_window,
             popover::get_popover_data,
+            popover::dismiss_popover,
         ])
         .run(tauri::generate_context!())
         .expect("error while running StarTalk");
