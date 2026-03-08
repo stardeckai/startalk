@@ -79,13 +79,13 @@ pub fn run() {
                 configure_pill_window(&pill);
             }
 
-            // Hide main window on close instead of destroying it
+            // Minimize main window on close instead of destroying it
             if let Some(main_win) = app.get_webview_window("main") {
                 let win = main_win.clone();
                 main_win.on_window_event(move |event| {
                     if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                         api.prevent_close();
-                        let _ = win.hide();
+                        let _ = win.minimize();
                     }
                 });
             }

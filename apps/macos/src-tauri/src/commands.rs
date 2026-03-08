@@ -71,6 +71,7 @@ pub fn set_pill_state<R: Runtime>(app: AppHandle<R>, state: &str) -> Result<(), 
 #[tauri::command]
 pub fn show_main_window<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
     let window = app.get_webview_window("main").ok_or("Main window not found")?;
+    window.unminimize().map_err(|e| format!("Failed to unminimize window: {e}"))?;
     window.show().map_err(|e| format!("Failed to show window: {e}"))?;
     window.set_focus().map_err(|e| format!("Failed to focus window: {e}"))
 }
