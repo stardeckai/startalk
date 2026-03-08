@@ -28,6 +28,7 @@ export interface AppConfig {
   apiKey: string;
   model: string;
   hotkey: string;
+  translateHotkey: string;
   transcriptionPrompt: string;
   historyRetention: HistoryRetention;
   vocabulary: VocabularyEntry[];

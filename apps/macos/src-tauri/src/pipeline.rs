@@ -4,9 +4,11 @@ use tauri::{AppHandle, Emitter, Runtime};
 
 use crate::config::ConfigState;
 use crate::db::Database;
+use crate::popover;
 use crate::recording::AudioRecorder;
 use crate::tray;
 use crate::transcription;
+use crate::translate;
 use crate::injector;
 
 const MIN_RECORDING_MS: u64 = 1000;
@@ -15,6 +17,7 @@ const MIN_RECORDING_MS: u64 = 1000;
 pub enum PipelineCommand {
     Start,
     Stop,
+    Translate,
 }
 
 pub fn spawn_pipeline_thread<R: Runtime + 'static>(
@@ -138,7 +141,64 @@ fn pipeline_loop<R: Runtime>(
 
                 emit_state(&app, "idle");
             }
+            PipelineCommand::Translate => {
+                if recorder.is_some() {
+                    eprintln!("[StarTalk] Can't translate while recording");
+                    continue;
+                }
+
+                let config = config_state.get();
+                if config.api_key.is_empty() {
+                    let _ = app.emit(
+                        "recording:error",
+                        serde_json::json!({ "message": "Set your OpenRouter API key first." }),
+                    );
+                    continue;
+                }
+
+                // Get selected text via Cmd+C
+                let selected = match translate::get_selected_text() {
+                    Ok(text) => text,
+                    Err(e) => {
+                        eprintln!("[StarTalk] Failed to get selected text: {e}");
+                        let _ = app.emit(
+                            "recording:error",
+                            serde_json::json!({ "message": format!("No text selected: {e}") }),
+                        );
+                        continue;
+                    }
+                };
+
+                eprintln!("[StarTalk] Translating: \"{}\"", selected);
+                let _ = app.emit("sound:translate", ());
+
+                let cursor_pos = get_cursor_position();
+                popover::show_loading(cursor_pos.0, cursor_pos.1);
+
+                match translate::translate(&http_client, &selected, &config) {
+                    Ok(result) => {
+                        popover::show(cursor_pos.0, cursor_pos.1, &selected, &result.translated);
+                    }
+                    Err(e) => {
+                        eprintln!("[StarTalk] Translation error: {e}");
+                        popover::show(cursor_pos.0, cursor_pos.1, &selected, &format!("Error: {e}"));
+                    }
+                }
+            }
         }
+    }
+}
+
+fn get_cursor_position() -> (f64, f64) {
+    let event = core_graphics::event::CGEvent::new(core_graphics::event_source::CGEventSource::new(
+        core_graphics::event_source::CGEventSourceStateID::CombinedSessionState,
+    ).unwrap());
+    match event {
+        Ok(e) => {
+            let loc = e.location();
+            (loc.x, loc.y)
+        }
+        Err(_) => (0.0, 0.0),
     }
 }
 

@@ -98,7 +98,9 @@ pub fn format_shortcut(mask: u64) -> String {
 }
 
 static TARGET_MASK: AtomicU64 = AtomicU64::new(0);
+static TRANSLATE_MASK: AtomicU64 = AtomicU64::new(0);
 static IS_ACTIVE: AtomicBool = AtomicBool::new(false);
+static TRANSLATE_ACTIVE: AtomicBool = AtomicBool::new(false);
 static PAUSED: AtomicBool = AtomicBool::new(false);
 static CURRENT_MODS: AtomicU64 = AtomicU64::new(0);
 
@@ -107,6 +109,14 @@ pub fn set_target_shortcut(shortcut: &str) -> Result<(), String> {
     eprintln!("[StarTalk] set_target_shortcut: \"{}\" -> mask=0b{:b}", shortcut, mask);
     TARGET_MASK.store(mask, Ordering::SeqCst);
     IS_ACTIVE.store(false, Ordering::SeqCst);
+    Ok(())
+}
+
+pub fn set_translate_shortcut(shortcut: &str) -> Result<(), String> {
+    let mask = parse_shortcut(shortcut)?;
+    eprintln!("[StarTalk] set_translate_shortcut: \"{}\" -> mask=0b{:b}", shortcut, mask);
+    TRANSLATE_MASK.store(mask, Ordering::SeqCst);
+    TRANSLATE_ACTIVE.store(false, Ordering::SeqCst);
     Ok(())
 }
 
@@ -182,15 +192,15 @@ pub fn start_monitor<R: Runtime>(app_handle: AppHandle<R>, pipeline_tx: mpsc::Se
                     let _ = app_handle.emit("modifiers:changed", "");
                 }
 
-                // Check if target shortcut is matched
-                let target = TARGET_MASK.load(Ordering::SeqCst);
                 let paused = PAUSED.load(Ordering::SeqCst);
+
+                // Check if recording shortcut is matched (hold-based)
+                let target = TARGET_MASK.load(Ordering::SeqCst);
                 if target != 0 {
                     let was_active = IS_ACTIVE.load(Ordering::SeqCst);
                     let is_match = (mods & target) == target;
 
                     if paused {
-                        // Don't match while paused, but log for debugging
                         if is_match {
                             eprintln!("[StarTalk] match ignored (paused), mods=0b{:b} target=0b{:b}", mods, target);
                         }
@@ -204,6 +214,21 @@ pub fn start_monitor<R: Runtime>(app_handle: AppHandle<R>, pipeline_tx: mpsc::Se
                         IS_ACTIVE.store(false, Ordering::SeqCst);
                         let _ = app_handle.emit("shortcut:released", format_shortcut(target));
                         let _ = pipeline_tx.send(PipelineCommand::Stop);
+                    }
+                }
+
+                // Check if translate shortcut is matched (tap-based, fires once on press)
+                let translate = TRANSLATE_MASK.load(Ordering::SeqCst);
+                if translate != 0 && !paused {
+                    let was_translate_active = TRANSLATE_ACTIVE.load(Ordering::SeqCst);
+                    let translate_match = (mods & translate) == translate;
+
+                    if translate_match && !was_translate_active {
+                        eprintln!("[StarTalk] translate:triggered mods=0b{:b} target=0b{:b}", mods, translate);
+                        TRANSLATE_ACTIVE.store(true, Ordering::SeqCst);
+                        let _ = pipeline_tx.send(PipelineCommand::Translate);
+                    } else if !translate_match && was_translate_active {
+                        TRANSLATE_ACTIVE.store(false, Ordering::SeqCst);
                     }
                 }
 

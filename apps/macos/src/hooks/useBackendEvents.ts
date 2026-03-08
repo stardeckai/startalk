@@ -1,6 +1,6 @@
 import { listen } from '@tauri-apps/api/event';
 import { useEffect } from 'react';
-import { playStartSound, playStopSound } from '../sounds';
+import { playStartSound, playStopSound, playTranslateSound } from '../sounds';
 import { useAppStore } from '../store';
 import { currentWindowLabel } from '../windowLabel';
 
@@ -43,6 +43,12 @@ export function useBackendEvents() {
     unlisteners.push(
       listen('sound:stop', () => {
         playStopSound();
+      }),
+    );
+
+    unlisteners.push(
+      listen('sound:translate', () => {
+        playTranslateSound();
       }),
     );
 

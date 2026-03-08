@@ -120,9 +120,15 @@ export function Settings() {
       </div>
 
       {/* Instructions */}
-      <div className="px-4 py-3 text-[13px] text-muted-foreground border-b border-border">
-        Hold <strong className="text-foreground">{config.hotkey || 'Globe'}</strong> to record, release to transcribe
-        into the focused input.
+      <div className="px-4 py-3 text-[13px] text-muted-foreground border-b border-border space-y-1">
+        <div>
+          Hold <strong className="text-foreground">{config.hotkey || 'Globe'}</strong> to record, release to transcribe
+          into the focused input.
+        </div>
+        <div>
+          Press <strong className="text-foreground">{config.translateHotkey || 'Cmd+Shift'}</strong> with text selected
+          to translate into English.
+        </div>
       </div>
 
       {/* Alerts — full-bleed borders */}
@@ -186,6 +192,19 @@ export function Settings() {
           <Field.Description className="text-xs text-muted-foreground mt-1.5">
             Click, then hold your desired modifier combo for 1 second.
             {hasAccessibility === false && ' (Requires accessibility permission)'}
+          </Field.Description>
+        </Field.Root>
+
+        <Field.Root>
+          <Field.Label className="block mb-1.5 text-[13px] font-medium text-muted-foreground">
+            Translate Hotkey
+          </Field.Label>
+          <HotkeyRecorder
+            value={config.translateHotkey}
+            onChange={(shortcut) => updateConfig({ translateHotkey: shortcut })}
+          />
+          <Field.Description className="text-xs text-muted-foreground mt-1.5">
+            Select text and press this combo to translate into English.
           </Field.Description>
         </Field.Root>
 

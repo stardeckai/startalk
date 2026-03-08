@@ -4,8 +4,10 @@ mod db;
 mod hotkey;
 mod injector;
 mod pipeline;
+mod popover;
 mod recording;
 mod transcription;
+mod translate;
 mod tray;
 
 #[macro_use]
@@ -114,9 +116,12 @@ pub fn run() {
                 pipeline_rx,
             );
 
-            // Set default shortcut and start the modifier monitor
+            // Set default shortcuts and start the modifier monitor
             if let Err(e) = hotkey::set_target_shortcut("Globe") {
                 eprintln!("Warning: Failed to set default shortcut: {e}");
+            }
+            if let Err(e) = hotkey::set_translate_shortcut("Cmd+Shift") {
+                eprintln!("Warning: Failed to set default translate shortcut: {e}");
             }
             hotkey::start_monitor(app.handle().clone(), pipeline_tx);
 

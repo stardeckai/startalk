@@ -1,4 +1,10 @@
-export { DEFAULT_CONFIG, DEFAULT_HOTKEY, DEFAULT_MODEL, DEFAULT_TRANSCRIPTION_PROMPT } from './config';
+export {
+  DEFAULT_CONFIG,
+  DEFAULT_HOTKEY,
+  DEFAULT_MODEL,
+  DEFAULT_TRANSCRIPTION_PROMPT,
+  DEFAULT_TRANSLATE_HOTKEY,
+} from './config';
 export type {
   AppConfig,
   HistoryRetention,

@@ -29,3 +29,9 @@ export function playStopSound() {
   playTone(900, 0.12);
   setTimeout(() => playTone(600, 0.15), 80);
 }
+
+/** Quick double-tap tone — translation triggered */
+export function playTranslateSound() {
+  playTone(800, 0.08, 0.12);
+  setTimeout(() => playTone(1100, 0.1, 0.12), 60);
+}

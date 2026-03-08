@@ -49,11 +49,16 @@ pub fn update_config(
     config: AppConfig,
 ) {
     eprintln!("[StarTalk] Config updated from frontend, model: {}", config.model);
-    // Update hotkey if it changed
+    // Update hotkeys if they changed
     let current = state.get();
     if current.hotkey != config.hotkey {
         if let Err(e) = hotkey::set_target_shortcut(&config.hotkey) {
             eprintln!("[StarTalk] Failed to update shortcut: {e}");
+        }
+    }
+    if current.translate_hotkey != config.translate_hotkey {
+        if let Err(e) = hotkey::set_translate_shortcut(&config.translate_hotkey) {
+            eprintln!("[StarTalk] Failed to update translate shortcut: {e}");
         }
     }
     state.set(config);
