@@ -101,12 +101,14 @@ static CURRENT_MODS: AtomicU64 = AtomicU64::new(0);
 
 pub fn set_target_shortcut(shortcut: &str) -> Result<(), String> {
     let mask = parse_shortcut(shortcut)?;
+    eprintln!("[StarTalk] set_target_shortcut: \"{}\" -> mask=0b{:b}", shortcut, mask);
     TARGET_MASK.store(mask, Ordering::SeqCst);
     IS_ACTIVE.store(false, Ordering::SeqCst);
     Ok(())
 }
 
 pub fn set_paused(paused: bool) {
+    eprintln!("[StarTalk] set_paused: {}", paused);
     PAUSED.store(paused, Ordering::SeqCst);
     if paused {
         IS_ACTIVE.store(false, Ordering::SeqCst);
@@ -179,14 +181,21 @@ pub fn start_monitor<R: Runtime>(app_handle: AppHandle<R>) {
                 // Check if target shortcut is matched
                 let target = TARGET_MASK.load(Ordering::SeqCst);
                 let paused = PAUSED.load(Ordering::SeqCst);
-                if target != 0 && !paused {
+                if target != 0 {
                     let was_active = IS_ACTIVE.load(Ordering::SeqCst);
                     let is_match = (mods & target) == target;
 
-                    if is_match && !was_active {
+                    if paused {
+                        // Don't match while paused, but log for debugging
+                        if is_match {
+                            eprintln!("[StarTalk] match ignored (paused), mods=0b{:b} target=0b{:b}", mods, target);
+                        }
+                    } else if is_match && !was_active {
+                        eprintln!("[StarTalk] shortcut:pressed mods=0b{:b} target=0b{:b}", mods, target);
                         IS_ACTIVE.store(true, Ordering::SeqCst);
                         let _ = app_handle.emit("shortcut:pressed", format_shortcut(target));
                     } else if !is_match && was_active {
+                        eprintln!("[StarTalk] shortcut:released mods=0b{:b} target=0b{:b}", mods, target);
                         IS_ACTIVE.store(false, Ordering::SeqCst);
                         let _ = app_handle.emit("shortcut:released", format_shortcut(target));
                     }

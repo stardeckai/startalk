@@ -10,6 +10,7 @@
     "frontendDist": "../dist"
   },
   "app": {
+    "macOSPrivateApi": true,
     "trayIcon": {
       "iconPath": "icons/tray-idle.png",
       "iconAsTemplate": true
@@ -19,10 +20,26 @@
         "label": "main",
         "title": "StarTalk Settings",
         "width": 420,
-        "height": 520,
+        "height": 600,
         "visible": true,
         "resizable": false,
         "center": true
+      },
+      {
+        "label": "pill",
+        "url": "index.html#pill",
+        "title": "",
+        "width": 180,
+        "height": 44,
+        "visible": true,
+        "resizable": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "shadow": false,
+        "x": 0,
+        "y": 0
       }
     ],
     "security": {

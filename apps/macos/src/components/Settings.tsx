@@ -53,6 +53,13 @@ export function Settings() {
       const saved = await store.get<AppConfig>('config');
       if (saved) {
         setConfig(saved);
+        if (saved.hotkey) {
+          try {
+            await invoke('update_shortcut', { shortcut: saved.hotkey });
+          } catch (e) {
+            console.error('Failed to restore shortcut:', e);
+          }
+        }
       }
     })();
   }, [setConfig]);
@@ -66,9 +73,11 @@ export function Settings() {
 
       if (partial.hotkey) {
         try {
+          console.log('[Settings] Updating shortcut to:', partial.hotkey);
           await invoke('update_shortcut', { shortcut: partial.hotkey });
+          console.log('[Settings] Shortcut updated successfully');
         } catch (e) {
-          console.error('Failed to update shortcut:', e);
+          console.error('[Settings] Failed to update shortcut:', e);
         }
       }
     },
@@ -127,7 +136,7 @@ export function Settings() {
           OpenRouter API Key
         </label>
         <input
-          type="password"
+          type="text"
           value={config.apiKey}
           onChange={(e) => updateConfig({ apiKey: e.target.value })}
           placeholder="sk-or-..."

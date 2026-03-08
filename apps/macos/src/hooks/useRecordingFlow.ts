@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { transcribe, blobToBase64, type AudioData } from '@startalk/core';
 import { AudioRecorder } from '../recorder';
 import { listenForHotkey } from '../hotkey';
@@ -6,8 +7,14 @@ import { injectText } from '../injector';
 import { setTrayState } from '../tray';
 import { useAppStore } from '../store';
 import { playStartSound, playStopSound } from '../sounds';
+import { saveRecording } from '../db';
+import { currentWindowLabel } from '../windowLabel';
 
 const MIN_RECORDING_MS = 1000;
+
+function setPillState(state: 'idle' | 'recording' | 'processing') {
+  invoke('set_pill_state', { state });
+}
 
 export function useRecordingFlow() {
   const recorder = useRef(new AudioRecorder());
@@ -19,8 +26,15 @@ export function useRecordingFlow() {
   const setError = useAppStore((s) => s.setError);
 
   useEffect(() => {
+    // Only run in the main window
+    console.log('[StarTalk][useRecordingFlow] useEffect firing, currentWindowLabel:', currentWindowLabel);
+    if (currentWindowLabel !== 'main') {
+      console.log('[StarTalk][useRecordingFlow] Skipping — not main window');
+      return;
+    }
+
     const handlePressed = async () => {
-      console.log('[StarTalk] Hotkey pressed — starting recording');
+      console.log('[StarTalk] Hotkey pressed — starting recording, apiKey:', config.apiKey ? `${config.apiKey.slice(0, 8)}...` : '(empty)');
       if (!config.apiKey) {
         setError('Set your OpenRouter API key first.');
         return;
@@ -28,6 +42,7 @@ export function useRecordingFlow() {
       try {
         setError(null);
         setRecording(true);
+        setPillState('recording');
         playStartSound();
         await setTrayState('recording');
         recordingStart.current = Date.now();
@@ -35,6 +50,7 @@ export function useRecordingFlow() {
       } catch (e) {
         setError(`Failed to start recording: ${e}`);
         setRecording(false);
+        setPillState('idle');
         await setTrayState('idle');
       }
     };
@@ -47,6 +63,7 @@ export function useRecordingFlow() {
       if (elapsed < MIN_RECORDING_MS) {
         try { await recorder.current.stop(); } catch {}
         setRecording(false);
+        setPillState('idle');
         await setTrayState('idle');
         return;
       }
@@ -54,6 +71,7 @@ export function useRecordingFlow() {
       try {
         setRecording(false);
         setProcessing(true);
+        setPillState('processing');
         playStopSound();
         await setTrayState('processing');
 
@@ -69,7 +87,7 @@ export function useRecordingFlow() {
 
         const audio: AudioData = { base64, mediaType };
 
-        console.log('[StarTalk] Sending to OpenRouter for transcription...');
+        console.log('[StarTalk] Sending to OpenRouter for transcription, apiKey:', config.apiKey ? `${config.apiKey.slice(0, 8)}...` : '(empty)');
         const result = await transcribe(audio, {
           apiKey: config.apiKey,
           model: config.model,
@@ -80,17 +98,33 @@ export function useRecordingFlow() {
         if (result.text) {
           setLastTranscription(result.text);
           await injectText(result.text);
+          // Save to history
+          const recDuration = Date.now() - recordingStart.current;
+          console.log(`[StarTalk] Saving recording: ${recDuration}ms, ${base64.length} chars`);
+          try {
+            await saveRecording(recDuration, result.text, base64, mediaType);
+            console.log('[StarTalk] Recording saved to DB');
+            await invoke('emit_recording_saved');
+          } catch (saveErr) {
+            console.error('[StarTalk] Failed to save recording:', saveErr);
+          }
         }
       } catch (e) {
         setError(`Transcription failed: ${e}`);
         console.error('[StarTalk] Error:', e);
       } finally {
         setProcessing(false);
+        setPillState('idle');
         await setTrayState('idle');
       }
     };
 
     let unlisten: (() => void) | null = null;
+
+    // Pre-acquire mic so start() is instant (no getUserMedia delay)
+    recorder.current.warmup().catch((e) =>
+      console.warn('[StarTalk] Mic warmup failed:', e)
+    );
 
     console.log('[StarTalk] Registering hotkey listener');
     listenForHotkey({
@@ -102,6 +136,7 @@ export function useRecordingFlow() {
 
     return () => {
       unlisten?.();
+      recorder.current.release();
     };
   }, [config.apiKey, config.model, config.transcriptionPrompt, setRecording, setProcessing, setLastTranscription, setError]);
 }

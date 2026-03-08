@@ -4,7 +4,7 @@ import { invoke } from '@tauri-apps/api/core';
 
 interface HotkeyRecorderProps {
   value: string;
-  onChange: (shortcut: string) => void;
+  onChange: (shortcut: string) => void | Promise<void>;
 }
 
 const DISPLAY_MAP: Record<string, string> = {
@@ -35,22 +35,28 @@ export function HotkeyRecorder({ value, onChange }: HotkeyRecorderProps) {
   const peakMods = useRef('');
 
   const stopRecording = useCallback(async (newShortcut?: string) => {
+    console.log('[HotkeyRecorder] stopRecording, newShortcut:', newShortcut);
     setRecording(false);
     setCurrentModifiers('');
     didCapture.current = false;
     peakMods.current = '';
     if (newShortcut) {
-      onChange(newShortcut);
+      // Call onChange and wait for it to complete before unpausing,
+      // so update_shortcut runs before set_hotkey_paused(false)
+      await Promise.resolve(onChange(newShortcut));
     }
+    console.log('[HotkeyRecorder] unpausing hotkey');
     await invoke('set_hotkey_paused', { paused: false });
   }, [onChange]);
 
   const startRecording = useCallback(async () => {
+    console.log('[HotkeyRecorder] startRecording');
     didCapture.current = false;
     peakMods.current = '';
     setRecording(true);
     setCurrentModifiers('');
     await invoke('set_hotkey_paused', { paused: true });
+    console.log('[HotkeyRecorder] paused hotkey');
   }, []);
 
   // Listen for modifier events — track peak state, capture on full release
@@ -62,6 +68,7 @@ export function HotkeyRecorder({ value, onChange }: HotkeyRecorderProps) {
     const unlisten = listen<string>('modifiers:changed', (event) => {
       if (cancelled || didCapture.current) return;
       const mods = event.payload;
+      console.log('[HotkeyRecorder] modifiers:changed:', mods);
       setCurrentModifiers(mods);
 
       if (mods) {
