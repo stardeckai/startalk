@@ -18,6 +18,12 @@ function formatDuration(ms: number): string {
   return `${Math.floor(secs / 60)}m ${secs % 60}s`;
 }
 
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export function History() {
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [playingId, setPlayingId] = useState<number | null>(null);
@@ -113,7 +119,7 @@ export function History() {
             }}
           >
             <span style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
-              {formatDate(rec.created_at)} · {formatDuration(rec.duration_ms)}
+              {formatDate(rec.created_at)} · {formatDuration(rec.duration_ms)} · {formatSize(Math.round(rec.audio_base64.length * 3 / 4))}
             </span>
             <div style={{ display: 'flex', gap: 4 }}>
               <button

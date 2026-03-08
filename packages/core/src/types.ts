@@ -15,9 +15,12 @@ export interface TranscriptionResult {
   durationMs: number;
 }
 
+export type HistoryRetention = '24h' | '3d' | '7d';
+
 export interface AppConfig {
   apiKey: string;
   model: string;
   hotkey: string;
   transcriptionPrompt: string;
+  historyRetention: HistoryRetention;
 }

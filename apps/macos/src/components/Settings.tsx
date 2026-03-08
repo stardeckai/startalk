@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { load, type Store } from '@tauri-apps/plugin-store';
 import { useAppStore } from '../store';
 import { HotkeyRecorder } from './HotkeyRecorder';
-import type { AppConfig } from '@startalk/core';
+import type { AppConfig, HistoryRetention } from '@startalk/core';
 
 let storePromise: Promise<Store> | null = null;
 function getStore() {
@@ -168,6 +168,21 @@ export function Settings() {
           Click, then hold your desired modifier combo for 1 second.
           {hasAccessibility === false && ' (Requires accessibility permission)'}
         </small>
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ display: 'block', marginBottom: 4, fontWeight: 500 }}>
+          History Retention
+        </label>
+        <select
+          value={config.historyRetention ?? '24h'}
+          onChange={(e) => updateConfig({ historyRetention: e.target.value as HistoryRetention })}
+          style={inputStyle}
+        >
+          <option value="24h">24 hours</option>
+          <option value="3d">3 days</option>
+          <option value="7d">7 days</option>
+        </select>
       </div>
 
       <div style={{ marginBottom: 16 }}>

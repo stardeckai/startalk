@@ -10,4 +10,5 @@ export const DEFAULT_CONFIG: AppConfig = {
     model: DEFAULT_MODEL,
     hotkey: DEFAULT_HOTKEY,
     transcriptionPrompt: DEFAULT_TRANSCRIPTION_PROMPT,
+    historyRetention: "24h",
 };

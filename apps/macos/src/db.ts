@@ -1,4 +1,11 @@
 import Database from '@tauri-apps/plugin-sql';
+import type { HistoryRetention } from '@startalk/core';
+
+const RETENTION_HOURS: Record<HistoryRetention, number> = {
+  '24h': 24,
+  '3d': 72,
+  '7d': 168,
+};
 
 export interface Recording {
   id: number;
@@ -42,4 +49,13 @@ export async function getRecordings(limit = 50, offset = 0): Promise<Recording[]
 export async function deleteRecording(id: number): Promise<void> {
   const d = await getDb();
   await d.execute('DELETE FROM recordings WHERE id = $1', [id]);
+}
+
+export async function cleanupOldRecordings(retention: HistoryRetention): Promise<number> {
+  const hours = RETENTION_HOURS[retention];
+  const d = await getDb();
+  const result = await d.execute(
+    `DELETE FROM recordings WHERE created_at < datetime('now', '-${hours} hours')`,
+  );
+  return result.rowsAffected;
 }

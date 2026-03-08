@@ -1,17 +1,13 @@
 export class AudioRecorder {
   private mediaRecorder: MediaRecorder | null = null;
   private chunks: Blob[] = [];
-  private stream: MediaStream | null = null;
+  private persistentStream: MediaStream | null = null;
   private stopping = false;
-  private mimeType: string | undefined;
 
-  /** Acquire the mic stream once so start() is instant. */
+  /** Acquire the mic stream once at startup. */
   async warmup(): Promise<void> {
-    if (this.stream) return;
-    this.stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    this.mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-      ? 'audio/webm;codecs=opus'
-      : undefined;
+    if (this.persistentStream) return;
+    this.persistentStream = await navigator.mediaDevices.getUserMedia({ audio: true });
     console.log('[StarTalk] Mic stream warmed up');
   }
 
@@ -19,12 +15,19 @@ export class AudioRecorder {
     this.stopping = false;
     this.chunks = [];
 
-    // Ensure we have a stream (instant if already warmed up)
-    if (!this.stream) {
+    if (!this.persistentStream) {
       await this.warmup();
     }
 
-    this.mediaRecorder = new MediaRecorder(this.stream!, { mimeType: this.mimeType });
+    // Clone the track so the MediaRecorder gets a fresh, active track each time
+    const clonedTrack = this.persistentStream!.getAudioTracks()[0].clone();
+    const stream = new MediaStream([clonedTrack]);
+
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+      ? 'audio/webm;codecs=opus'
+      : undefined;
+
+    this.mediaRecorder = new MediaRecorder(stream, { mimeType });
 
     this.mediaRecorder.ondataavailable = (e) => {
       if (e.data.size > 0) this.chunks.push(e.data);
@@ -45,7 +48,8 @@ export class AudioRecorder {
       this.mediaRecorder.onstop = () => {
         const mimeType = this.mediaRecorder?.mimeType ?? 'audio/webm';
         const blob = new Blob(this.chunks, { type: mimeType });
-        // Don't release the stream — keep it for next recording
+        // Stop the cloned track, keep the persistent stream alive
+        this.mediaRecorder?.stream.getTracks().forEach((t) => t.stop());
         this.mediaRecorder = null;
         this.chunks = [];
         resolve(blob);
@@ -60,8 +64,8 @@ export class AudioRecorder {
   }
 
   release(): void {
-    this.stream?.getTracks().forEach((t) => t.stop());
-    this.stream = null;
+    this.persistentStream?.getTracks().forEach((t) => t.stop());
+    this.persistentStream = null;
     this.mediaRecorder = null;
     this.chunks = [];
   }
