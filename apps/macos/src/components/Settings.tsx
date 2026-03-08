@@ -28,6 +28,29 @@ function getStore() {
   return storePromise;
 }
 
+const languageOptions = [
+  'English',
+  'Thai',
+  'Spanish',
+  'French',
+  'German',
+  'Italian',
+  'Portuguese',
+  'Japanese',
+  'Korean',
+  'Chinese (Simplified)',
+  'Chinese (Traditional)',
+  'Arabic',
+  'Hindi',
+  'Russian',
+  'Vietnamese',
+  'Indonesian',
+  'Turkish',
+  'Dutch',
+  'Polish',
+  'Swedish',
+];
+
 const retentionOptions = [
   { label: '24 hours', value: '24h' },
   { label: '3 days', value: '3d' },
@@ -201,6 +224,43 @@ export function Settings() {
           <Field.Description className="text-xs text-muted-foreground mt-1.5">
             Tap to translate selected text, or hold to ask a question about it.
           </Field.Description>
+        </Field.Root>
+
+        <Field.Root>
+          <Field.Label className="block mb-1.5 text-[13px] font-medium text-muted-foreground">
+            Translation Language
+          </Field.Label>
+          <Select.Root
+            value={config.targetLanguage || 'English'}
+            onValueChange={(val) => val && updateConfig({ targetLanguage: val })}
+          >
+            <Select.Trigger className={`${inputClassName} flex items-center justify-between cursor-pointer`}>
+              <Select.Value placeholder="Select..." />
+              <Select.Icon>
+                <ChevronDown size={14} />
+              </Select.Icon>
+            </Select.Trigger>
+            <Select.Portal>
+              <Select.Positioner sideOffset={4}>
+                <Select.Popup className="select-popup">
+                  <Select.List>
+                    {languageOptions.map((lang) => (
+                      <Select.Item
+                        key={lang}
+                        value={lang}
+                        className="flex items-center gap-2 px-2 py-1.5 text-[13px] cursor-pointer outline-none data-[highlighted]:bg-muted"
+                      >
+                        <Select.ItemIndicator className="w-4 flex items-center justify-center">
+                          <Check size={12} />
+                        </Select.ItemIndicator>
+                        <Select.ItemText>{lang}</Select.ItemText>
+                      </Select.Item>
+                    ))}
+                  </Select.List>
+                </Select.Popup>
+              </Select.Positioner>
+            </Select.Portal>
+          </Select.Root>
         </Field.Root>
 
         <Field.Root>

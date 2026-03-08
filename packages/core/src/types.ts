@@ -29,6 +29,7 @@ export interface AppConfig {
   model: string;
   hotkey: string;
   askHotkey: string;
+  targetLanguage: string;
   transcriptionPrompt: string;
   historyRetention: HistoryRetention;
   vocabulary: VocabularyEntry[];

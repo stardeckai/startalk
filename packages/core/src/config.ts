@@ -8,11 +8,14 @@ export const DEFAULT_ASK_HOTKEY = 'Cmd+Shift';
 export const DEFAULT_TRANSCRIPTION_PROMPT = '';
 
 // Keep defaults in sync with apps/macos/src-tauri/src/config.rs AppConfig::default()
+export const DEFAULT_TARGET_LANGUAGE = 'English';
+
 export const DEFAULT_CONFIG: AppConfig = {
   apiKey: '',
   model: DEFAULT_MODEL,
   hotkey: DEFAULT_HOTKEY,
   askHotkey: DEFAULT_ASK_HOTKEY,
+  targetLanguage: DEFAULT_TARGET_LANGUAGE,
   transcriptionPrompt: DEFAULT_TRANSCRIPTION_PROMPT,
   historyRetention: '24h',
   vocabulary: [],

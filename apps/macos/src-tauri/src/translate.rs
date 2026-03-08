@@ -4,11 +4,14 @@ use std::process::Command;
 
 const OPENROUTER_API_URL: &str = "https://openrouter.ai/api/v1/chat/completions";
 
-const TRANSLATE_PROMPT: &str = "\
-You are a translation engine. Translate the provided text into English.
-Output ONLY the translated text, nothing else. No labels, no commentary, no quotation marks.
-If the text is already in English, output it unchanged.
-Preserve formatting (line breaks, punctuation) from the original.";
+fn translate_prompt(language: &str) -> String {
+    format!(
+        "You are a translation engine. Translate the provided text into {language}.\n\
+         Output ONLY the translated text, nothing else. No labels, no commentary, no quotation marks.\n\
+         If the text is already in {language}, output it unchanged.\n\
+         Preserve formatting (line breaks, punctuation) from the original."
+    )
+}
 
 const ASK_PROMPT: &str = "\
 You are a helpful assistant. The user has selected some text and is asking a question about it.
@@ -93,7 +96,7 @@ pub fn translate(
         messages: vec![
             Message {
                 role: "system".into(),
-                content: TRANSLATE_PROMPT.into(),
+                content: translate_prompt(&config.target_language),
             },
             Message {
                 role: "user".into(),
