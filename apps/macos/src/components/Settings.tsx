@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import { load, type Store } from '@tauri-apps/plugin-store';
 import { Field } from '@base-ui/react/field';
 import { Select } from '@base-ui/react/select';
@@ -33,6 +34,7 @@ export function Settings() {
   const isRecording = useAppStore((s) => s.isRecording);
   const isProcessing = useAppStore((s) => s.isProcessing);
   const [hasAccessibility, setHasAccessibility] = useState<boolean | null>(null);
+  const [hotkeyFailed, setHotkeyFailed] = useState(false);
   const [apiKeyOpen, setApiKeyOpen] = useState(false);
 
   useEffect(() => {
@@ -52,6 +54,13 @@ export function Settings() {
     check();
     interval = setInterval(check, 3000);
     return () => { if (interval) clearInterval(interval); };
+  }, []);
+
+  useEffect(() => {
+    const unlisten = listen('hotkey:status', (event) => {
+      setHotkeyFailed(event.payload === 'failed');
+    });
+    return () => { unlisten.then((fn) => fn()); };
   }, []);
 
   useEffect(() => {
@@ -105,15 +114,15 @@ export function Settings() {
       </div>
 
       {/* Alerts — full-bleed borders */}
-      {hasAccessibility === false && (
+      {(hasAccessibility === false || hotkeyFailed) && (
         <div className="flex items-start gap-3 px-4 py-3 text-[13px] text-destructive bg-destructive/10 border-b border-destructive/20">
           <ShieldAlert size={16} className="shrink-0 mt-0.5" />
           <div>
-            <strong>Accessibility permission required.</strong> StarTalk needs this to
-            detect global hotkeys and type text.
+            <strong>Permissions required.</strong> StarTalk needs Accessibility and Input Monitoring
+            to detect hotkeys and type text.
             <br />
-            Go to <strong>System Settings → Privacy & Security → Accessibility</strong> and
-            enable StarTalk. You may need to restart the app after granting permission.
+            Go to <strong>System Settings → Privacy & Security → Accessibility</strong> and{' '}
+            <strong>Input Monitoring</strong>, then enable StarTalk. Restart the app after granting.
           </div>
         </div>
       )}
