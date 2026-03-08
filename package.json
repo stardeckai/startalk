@@ -1,0 +1,9 @@
+{
+  "name": "startalk",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter @startalk/macos tauri dev",
+    "build": "pnpm --filter @startalk/core build && pnpm --filter @startalk/macos tauri build",
+    "typecheck": "pnpm -r typecheck"
+  }
+}
