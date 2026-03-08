@@ -2,7 +2,9 @@
 name = "startalk"
 version = "0.2.0"
 description = "Voice-to-text transcription utility"
-authors = ["you"]
+authors = ["Stardeck"]
+license = "MIT"
+repository = "https://github.com/xgreenfield/startalk"
 edition = "2021"
 
 [lib]

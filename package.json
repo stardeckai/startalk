@@ -1,6 +1,11 @@
 {
   "name": "startalk",
   "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xgreenfield/startalk.git"
+  },
   "scripts": {
     "dev": "pnpm --filter @startalk/macos tauri dev",
     "build": "pnpm --filter @startalk/core build && pnpm --filter @startalk/macos tauri build",
