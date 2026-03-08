@@ -1,4 +1,6 @@
+use std::path::PathBuf;
 use tauri::{
+    image::Image,
     menu::{Menu, MenuItem},
     tray::TrayIconEvent,
     AppHandle, Manager, Runtime,
@@ -36,4 +38,36 @@ pub fn create_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
     });
 
     Ok(())
+}
+
+/// Update the tray icon to match the given state. Callable from any thread.
+pub fn update_icon<R: Runtime>(app: &AppHandle<R>, state: &str) {
+    let icon_name = match state {
+        "recording" => "tray-recording.png",
+        "processing" => "tray-processing.png",
+        _ => "tray-idle.png",
+    };
+
+    let Some(tray) = app.tray_by_id("main") else {
+        return;
+    };
+
+    let resource_path = match app.path().resource_dir() {
+        Ok(p) => p,
+        Err(_) => return,
+    };
+
+    let icon_path = resource_path.join("icons").join(icon_name);
+    let icon_bytes = std::fs::read(&icon_path).or_else(|_| {
+        let dev_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("icons")
+            .join(icon_name);
+        std::fs::read(&dev_path)
+    });
+
+    if let Ok(bytes) = icon_bytes {
+        if let Ok(icon) = Image::from_bytes(&bytes) {
+            let _ = tray.set_icon(Some(icon));
+        }
+    }
 }

@@ -4,13 +4,13 @@ import { History } from './components/History';
 import { Settings } from './components/Settings';
 import { StatusPill } from './components/StatusPill';
 import { Vocabulary } from './components/Vocabulary';
-import { useRecordingFlow } from './hooks/useRecordingFlow';
+import { useBackendEvents } from './hooks/useBackendEvents';
 import { currentWindowLabel } from './windowLabel';
 
 console.log('[StarTalk] Window label:', currentWindowLabel);
 
 function MainApp() {
-  useRecordingFlow();
+  useBackendEvents();
 
   return (
     <Tabs.Root defaultValue="settings" className="flex flex-col h-screen">

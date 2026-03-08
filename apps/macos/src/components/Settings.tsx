@@ -84,12 +84,11 @@ export function Settings() {
       const saved = await store.get<AppConfig>('config');
       if (saved) {
         setConfig(saved);
-        if (saved.hotkey) {
-          try {
-            await invoke('update_shortcut', { shortcut: saved.hotkey });
-          } catch (e) {
-            console.error('Failed to restore shortcut:', e);
-          }
+        // Push config to Rust backend
+        try {
+          await invoke('update_config', { config: saved });
+        } catch (e) {
+          console.error('Failed to push config to backend:', e);
         }
       }
     })();
@@ -102,14 +101,11 @@ export function Settings() {
       const fullConfig = useAppStore.getState().config;
       await store.set('config', fullConfig);
 
-      if (partial.hotkey) {
-        try {
-          console.log('[Settings] Updating shortcut to:', partial.hotkey);
-          await invoke('update_shortcut', { shortcut: partial.hotkey });
-          console.log('[Settings] Shortcut updated successfully');
-        } catch (e) {
-          console.error('[Settings] Failed to update shortcut:', e);
-        }
+      // Push updated config to Rust backend (handles hotkey, API key, vocabulary, etc.)
+      try {
+        await invoke('update_config', { config: fullConfig });
+      } catch (e) {
+        console.error('[Settings] Failed to push config to backend:', e);
       }
     },
     [setConfig],
@@ -128,16 +124,6 @@ export function Settings() {
         Hold <strong className="text-foreground">{config.hotkey || 'Globe'}</strong> to record, release to transcribe
         into the focused input.
       </div>
-
-      {/* Last transcription */}
-      {lastTranscription && (
-        <div className="border-b border-border px-4 py-3">
-          <span className="block mb-1.5 text-[13px] font-medium text-muted-foreground">Last Transcription</span>
-          <div className="px-3 py-2 bg-muted text-[13px] whitespace-pre-wrap text-foreground border border-border">
-            {lastTranscription}
-          </div>
-        </div>
-      )}
 
       {/* Alerts — full-bleed borders */}
       {(hasAccessibility === false || hotkeyFailed) && (

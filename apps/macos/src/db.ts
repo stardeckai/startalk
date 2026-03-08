@@ -1,11 +1,4 @@
-import type { HistoryRetention } from '@startalk/core';
 import Database from '@tauri-apps/plugin-sql';
-
-const RETENTION_HOURS: Record<HistoryRetention, number> = {
-  '24h': 24,
-  '3d': 72,
-  '7d': 168,
-};
 
 export interface Recording {
   id: number;
@@ -31,20 +24,6 @@ async function getDb(): Promise<Database> {
   return db;
 }
 
-export async function saveRecording(
-  durationMs: number,
-  transcription: string,
-  audioBase64: string,
-  audioType: string,
-  cost: number | null,
-): Promise<void> {
-  const d = await getDb();
-  await d.execute(
-    'INSERT INTO recordings (duration_ms, transcription, audio_base64, audio_type, cost) VALUES ($1, $2, $3, $4, $5)',
-    [durationMs, transcription, audioBase64, audioType, cost],
-  );
-}
-
 export async function getRecordings(limit = 50, offset = 0): Promise<Recording[]> {
   const d = await getDb();
   return d.select<Recording[]>(
@@ -62,11 +41,4 @@ export async function getRecordingAudio(id: number): Promise<RecordingAudio | nu
 export async function deleteRecording(id: number): Promise<void> {
   const d = await getDb();
   await d.execute('DELETE FROM recordings WHERE id = $1', [id]);
-}
-
-export async function cleanupOldRecordings(retention: HistoryRetention): Promise<number> {
-  const hours = RETENTION_HOURS[retention];
-  const d = await getDb();
-  const result = await d.execute(`DELETE FROM recordings WHERE created_at < datetime('now', $1)`, [`-${hours} hours`]);
-  return result.rowsAffected;
 }

@@ -4,7 +4,10 @@ use core_graphics::event::{
     CGEventTapPlacement, CGEventType,
 };
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::mpsc;
 use tauri::{AppHandle, Emitter, Runtime};
+
+use crate::pipeline::PipelineCommand;
 
 // We use keycodes to distinguish left/right modifiers.
 // Each modifier gets its own bit in our custom bitmask.
@@ -137,7 +140,7 @@ fn update_mods_from_flags(keycode: i64, raw_flags: u64) -> u64 {
     mods
 }
 
-pub fn start_monitor<R: Runtime>(app_handle: AppHandle<R>) {
+pub fn start_monitor<R: Runtime>(app_handle: AppHandle<R>, pipeline_tx: mpsc::Sender<PipelineCommand>) {
     std::thread::spawn(move || {
         let status_handle = app_handle.clone();
         let tap = CGEventTap::new(
@@ -195,10 +198,12 @@ pub fn start_monitor<R: Runtime>(app_handle: AppHandle<R>) {
                         eprintln!("[StarTalk] shortcut:pressed mods=0b{:b} target=0b{:b}", mods, target);
                         IS_ACTIVE.store(true, Ordering::SeqCst);
                         let _ = app_handle.emit("shortcut:pressed", format_shortcut(target));
+                        let _ = pipeline_tx.send(PipelineCommand::Start);
                     } else if !is_match && was_active {
                         eprintln!("[StarTalk] shortcut:released mods=0b{:b} target=0b{:b}", mods, target);
                         IS_ACTIVE.store(false, Ordering::SeqCst);
                         let _ = app_handle.emit("shortcut:released", format_shortcut(target));
+                        let _ = pipeline_tx.send(PipelineCommand::Stop);
                     }
                 }
 
