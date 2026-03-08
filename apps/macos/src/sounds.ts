@@ -1,6 +1,7 @@
 const audioCtx = new AudioContext();
 
 function playTone(frequency: number, duration: number, volume: number = 0.15) {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
 

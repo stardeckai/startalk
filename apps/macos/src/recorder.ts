@@ -20,7 +20,9 @@ export class AudioRecorder {
     }
 
     // Clone the track so the MediaRecorder gets a fresh, active track each time
-    const clonedTrack = this.persistentStream!.getAudioTracks()[0].clone();
+    const sourceTrack = this.persistentStream!.getAudioTracks()[0];
+    if (!sourceTrack) throw new Error('No audio track available');
+    const clonedTrack = sourceTrack.clone();
     const stream = new MediaStream([clonedTrack]);
 
     const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')

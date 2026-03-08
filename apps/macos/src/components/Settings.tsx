@@ -34,17 +34,22 @@ export function Settings() {
   const [hasAccessibility, setHasAccessibility] = useState<boolean | null>(null);
 
   useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
     const check = async () => {
       try {
         const result = await invoke<boolean>('check_accessibility');
         setHasAccessibility(result);
+        if (result && interval) {
+          clearInterval(interval);
+          interval = null;
+        }
       } catch {
         setHasAccessibility(null);
       }
     };
     check();
-    const interval = setInterval(check, 3000);
-    return () => clearInterval(interval);
+    interval = setInterval(check, 3000);
+    return () => { if (interval) clearInterval(interval); };
   }, []);
 
   useEffect(() => {
@@ -94,12 +99,12 @@ export function Settings() {
         <div
           style={{
             padding: 12,
-            background: 'oklch(0.6297 0.1361 27.02 / 0.1)',
+            background: 'color-mix(in oklch, var(--destructive) 10%, transparent)',
             borderRadius: 'var(--radius)',
             marginBottom: 16,
             fontSize: 13,
             color: 'var(--destructive)',
-            border: '1px solid oklch(0.6297 0.1361 27.02 / 0.2)',
+            border: '1px solid color-mix(in oklch, var(--destructive) 20%, transparent)',
           }}
         >
           <strong>Accessibility permission required.</strong> StarTalk needs this to
@@ -115,16 +120,16 @@ export function Settings() {
           style={{
             padding: 12,
             background: isRecording
-              ? 'oklch(0.6297 0.1361 159.38 / 0.1)'
-              : 'oklch(0.7431 0.0391 258.37 / 0.15)',
+              ? 'color-mix(in oklch, var(--success) 10%, transparent)'
+              : 'color-mix(in oklch, var(--accent-blue) 15%, transparent)',
             borderRadius: 'var(--radius)',
             marginBottom: 16,
             fontSize: 13,
             fontWeight: 500,
             color: isRecording ? 'var(--success)' : 'var(--accent-blue)',
             border: isRecording
-              ? '1px solid oklch(0.6297 0.1361 159.38 / 0.2)'
-              : '1px solid oklch(0.7431 0.0391 258.37 / 0.25)',
+              ? '1px solid color-mix(in oklch, var(--success) 20%, transparent)'
+              : '1px solid color-mix(in oklch, var(--accent-blue) 25%, transparent)',
           }}
         >
           {isRecording ? 'Recording... release to transcribe' : 'Transcribing...'}
@@ -201,12 +206,12 @@ export function Settings() {
         <div
           style={{
             padding: 12,
-            background: 'oklch(0.6297 0.1361 73.45 / 0.1)',
+            background: 'color-mix(in oklch, var(--warning) 10%, transparent)',
             borderRadius: 'var(--radius)',
             marginBottom: 16,
             fontSize: 13,
             color: 'var(--warning)',
-            border: '1px solid oklch(0.6297 0.1361 73.45 / 0.2)',
+            border: '1px solid color-mix(in oklch, var(--warning) 20%, transparent)',
           }}
         >
           Enter your OpenRouter API key to start using StarTalk.
@@ -217,12 +222,12 @@ export function Settings() {
         <div
           style={{
             padding: 12,
-            background: 'oklch(0.6297 0.1361 27.02 / 0.1)',
+            background: 'color-mix(in oklch, var(--destructive) 10%, transparent)',
             borderRadius: 'var(--radius)',
             marginBottom: 16,
             fontSize: 13,
             color: 'var(--destructive)',
-            border: '1px solid oklch(0.6297 0.1361 27.02 / 0.2)',
+            border: '1px solid color-mix(in oklch, var(--destructive) 20%, transparent)',
           }}
         >
           {error}

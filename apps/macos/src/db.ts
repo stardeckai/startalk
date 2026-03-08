@@ -12,6 +12,11 @@ export interface Recording {
   created_at: string;
   duration_ms: number;
   transcription: string;
+  audio_size: number;
+  audio_type: string;
+}
+
+export interface RecordingAudio {
   audio_base64: string;
   audio_type: string;
 }
@@ -41,9 +46,18 @@ export async function saveRecording(
 export async function getRecordings(limit = 50, offset = 0): Promise<Recording[]> {
   const d = await getDb();
   return d.select<Recording[]>(
-    'SELECT id, created_at, duration_ms, transcription, audio_base64, audio_type FROM recordings ORDER BY created_at DESC LIMIT $1 OFFSET $2',
+    'SELECT id, created_at, duration_ms, transcription, length(audio_base64) * 3 / 4 as audio_size, audio_type FROM recordings ORDER BY created_at DESC LIMIT $1 OFFSET $2',
     [limit, offset],
   );
+}
+
+export async function getRecordingAudio(id: number): Promise<RecordingAudio | null> {
+  const d = await getDb();
+  const rows = await d.select<RecordingAudio[]>(
+    'SELECT audio_base64, audio_type FROM recordings WHERE id = $1',
+    [id],
+  );
+  return rows[0] ?? null;
 }
 
 export async function deleteRecording(id: number): Promise<void> {
@@ -55,7 +69,8 @@ export async function cleanupOldRecordings(retention: HistoryRetention): Promise
   const hours = RETENTION_HOURS[retention];
   const d = await getDb();
   const result = await d.execute(
-    `DELETE FROM recordings WHERE created_at < datetime('now', '-${hours} hours')`,
+    `DELETE FROM recordings WHERE created_at < datetime('now', $1)`,
+    [`-${hours} hours`],
   );
   return result.rowsAffected;
 }

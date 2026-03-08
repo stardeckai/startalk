@@ -10,13 +10,9 @@ import { playStartSound, playStopSound } from '../sounds';
 import { saveRecording, cleanupOldRecordings } from '../db';
 import { currentWindowLabel } from '../windowLabel';
 
-const MIN_RECORDING_MS = 1000;
+import { formatSize } from '../utils/format';
 
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
+const MIN_RECORDING_MS = 1000;
 
 function setPillState(state: 'idle' | 'recording' | 'processing') {
   invoke('set_pill_state', { state });

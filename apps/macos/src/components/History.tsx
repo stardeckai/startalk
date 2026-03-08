@@ -1,28 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { getRecordings, deleteRecording, type Recording } from '../db';
-
-function formatDate(iso: string): string {
-  const d = new Date(iso + 'Z');
-  return d.toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-}
-
-function formatDuration(ms: number): string {
-  const secs = Math.round(ms / 1000);
-  if (secs < 60) return `${secs}s`;
-  return `${Math.floor(secs / 60)}m ${secs % 60}s`;
-}
-
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
+import { getRecordings, getRecordingAudio, deleteRecording, type Recording } from '../db';
+import { formatDate, formatDuration, formatSize } from '../utils/format';
 
 export function History() {
   const [recordings, setRecordings] = useState<Recording[]>([]);
@@ -40,25 +19,25 @@ export function History() {
 
   useEffect(() => {
     load();
-    // Refresh when a new recording is saved
     const unlisten = listen('recording:saved', () => load());
     return () => { unlisten.then((fn) => fn()); };
   }, [load]);
 
-  const handlePlay = (rec: Recording) => {
-    if (audioEl) {
-      audioEl.pause();
-      setAudioEl(null);
-    }
-    if (playingId === rec.id) {
-      setPlayingId(null);
-      return;
-    }
-    const audio = new Audio(`data:${rec.audio_type};base64,${rec.audio_base64}`);
-    audio.onended = () => {
-      setPlayingId(null);
-      setAudioEl(null);
-    };
+  const stopPlayback = () => {
+    audioEl?.pause();
+    setPlayingId(null);
+    setAudioEl(null);
+  };
+
+  const handlePlay = async (rec: Recording) => {
+    stopPlayback();
+    if (playingId === rec.id) return;
+
+    const data = await getRecordingAudio(rec.id);
+    if (!data) return;
+
+    const audio = new Audio(`data:${data.audio_type};base64,${data.audio_base64}`);
+    audio.onended = () => stopPlayback();
     audio.play();
     setPlayingId(rec.id);
     setAudioEl(audio);
@@ -68,11 +47,7 @@ export function History() {
     try {
       await deleteRecording(id);
       setRecordings((prev) => prev.filter((r) => r.id !== id));
-      if (playingId === id && audioEl) {
-        audioEl.pause();
-        setPlayingId(null);
-        setAudioEl(null);
-      }
+      if (playingId === id) stopPlayback();
     } catch (e) {
       console.error('[History] Failed to delete:', e);
     }
@@ -119,7 +94,7 @@ export function History() {
             }}
           >
             <span style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
-              {formatDate(rec.created_at)} · {formatDuration(rec.duration_ms)} · {formatSize(Math.round(rec.audio_base64.length * 3 / 4))}
+              {formatDate(rec.created_at)} · {formatDuration(rec.duration_ms)} · {formatSize(rec.audio_size)}
             </span>
             <div style={{ display: 'flex', gap: 4 }}>
               <button
