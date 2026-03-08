@@ -61,10 +61,6 @@ export function StatusPill() {
     return () => { unlisten.then((fn) => fn()); };
   }, []);
 
-  // Make pill interactive so we can detect hover
-  useEffect(() => {
-    invoke('set_pill_interactive', { interactive: true }).catch(() => {});
-  }, []);
 
   const expanded = state !== 'idle' || hovered;
   const s = pillStyles[state];

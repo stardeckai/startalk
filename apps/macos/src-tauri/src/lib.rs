@@ -2,6 +2,9 @@ mod commands;
 mod hotkey;
 mod tray;
 
+#[macro_use]
+extern crate objc;
+
 use tauri::Manager;
 use tauri_plugin_sql::{Migration, MigrationKind};
 
@@ -47,6 +50,12 @@ fn configure_pill_window(pill: &tauri::WebviewWindow) {
 
         // kCGMaximumWindowLevel to float above everything including fullscreen
         ns_win.setLevel_(i32::MAX as i64);
+
+        // Accept mouse events without requiring a click to activate first
+        ns_win.setAcceptsMouseMovedEvents_(cocoa::base::YES);
+        // NSNonactivatingPanelMask — window receives events without becoming key/main
+        let style: u64 = msg_send![ns_win, styleMask];
+        let _: () = msg_send![ns_win, setStyleMask: style | (1u64 << 7)]; // NSWindowStyleMaskNonactivatingPanel
     }
 }
 
@@ -74,7 +83,6 @@ pub fn run() {
                     let y = screen.height as f64 / scale - pill_h - 8.0;
                     let _ = pill.set_position(tauri::LogicalPosition::new(x, y));
                 }
-                let _ = pill.set_ignore_cursor_events(true);
                 #[cfg(target_os = "macos")]
                 configure_pill_window(&pill);
             }
