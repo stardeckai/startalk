@@ -69,14 +69,25 @@ pub fn run() {
                     let screen = monitor.size();
                     let scale = monitor.scale_factor();
                     let pill_w = 180.0;
-                    let pill_h = 44.0;
+                    let pill_h = 60.0;
                     let x = (screen.width as f64 / scale - pill_w) / 2.0;
-                    let y = screen.height as f64 / scale - pill_h - 80.0;
+                    let y = screen.height as f64 / scale - pill_h - 8.0;
                     let _ = pill.set_position(tauri::LogicalPosition::new(x, y));
                 }
                 let _ = pill.set_ignore_cursor_events(true);
                 #[cfg(target_os = "macos")]
                 configure_pill_window(&pill);
+            }
+
+            // Hide main window on close instead of destroying it
+            if let Some(main_win) = app.get_webview_window("main") {
+                let win = main_win.clone();
+                main_win.on_window_event(move |event| {
+                    if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                        api.prevent_close();
+                        let _ = win.hide();
+                    }
+                });
             }
 
             // Set default shortcut and start the modifier monitor
@@ -94,6 +105,7 @@ pub fn run() {
             commands::set_hotkey_paused,
             commands::set_pill_interactive,
             commands::set_pill_state,
+            commands::show_main_window,
             commands::emit_recording_saved,
             commands::proxy_fetch,
         ])
