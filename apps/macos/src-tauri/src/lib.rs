@@ -19,31 +19,14 @@ use tauri::Manager;
 
 #[cfg(target_os = "macos")]
 fn configure_pill_window(pill: &tauri::WebviewWindow) {
-    use cocoa::appkit::{NSColor, NSWindow, NSWindowCollectionBehavior};
-    use cocoa::base::{id, nil};
+    use cocoa::appkit::NSWindow;
+    use cocoa::base::id;
 
     let ns_win: id = pill.ns_window().unwrap() as id;
     unsafe {
-        // Make window background fully transparent
-        let clear = NSColor::clearColor(nil);
-        ns_win.setBackgroundColor_(clear);
-        ns_win.setOpaque_(cocoa::base::NO);
+        popover::configure_overlay_window(ns_win);
         ns_win.setHasShadow_(cocoa::base::NO);
-
-        // Show on all spaces including fullscreen
-        ns_win.setCollectionBehavior_(
-            NSWindowCollectionBehavior::NSWindowCollectionBehaviorCanJoinAllSpaces
-                | NSWindowCollectionBehavior::NSWindowCollectionBehaviorFullScreenAuxiliary,
-        );
-
-        // kCGMaximumWindowLevel to float above everything including fullscreen
-        ns_win.setLevel_(i32::MAX as i64);
-
-        // Accept mouse events without requiring a click to activate first
         ns_win.setAcceptsMouseMovedEvents_(cocoa::base::YES);
-        // NSNonactivatingPanelMask — window receives events without becoming key/main
-        let style: u64 = msg_send![ns_win, styleMask];
-        let _: () = msg_send![ns_win, setStyleMask: style | (1u64 << 7)]; // NSWindowStyleMaskNonactivatingPanel
     }
 }
 
@@ -120,8 +103,8 @@ pub fn run() {
             if let Err(e) = hotkey::set_target_shortcut("Globe") {
                 eprintln!("Warning: Failed to set default shortcut: {e}");
             }
-            if let Err(e) = hotkey::set_translate_shortcut("Cmd+Shift") {
-                eprintln!("Warning: Failed to set default translate shortcut: {e}");
+            if let Err(e) = hotkey::set_ask_shortcut("Cmd+Shift") {
+                eprintln!("Warning: Failed to set default ask shortcut: {e}");
             }
             hotkey::start_monitor(app.handle().clone(), pipeline_tx);
 
@@ -135,6 +118,7 @@ pub fn run() {
             commands::set_pill_interactive,
             commands::set_pill_state,
             commands::show_main_window,
+            popover::get_popover_data,
         ])
         .run(tauri::generate_context!())
         .expect("error while running StarTalk");

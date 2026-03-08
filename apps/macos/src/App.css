@@ -45,6 +45,27 @@ body {
   min-width: var(--anchor-width);
 }
 
+/* Popover window */
+.popover-container {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.popover-card {
+  background: oklch(0.99 0 0 / 0.92);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid oklch(0.5 0 0 / 0.12);
+  border-radius: 12px;
+  box-shadow:
+    0 8px 32px oklch(0 0 0 / 0.12),
+    0 2px 8px oklch(0 0 0 / 0.06);
+  overflow: hidden;
+  max-height: 100vh;
+}
+
 /* Pulse animation for StatusPill */
 @keyframes pulse {
   0%,

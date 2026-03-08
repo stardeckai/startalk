@@ -126,8 +126,8 @@ export function Settings() {
           into the focused input.
         </div>
         <div>
-          Press <strong className="text-foreground">{config.translateHotkey || 'Cmd+Shift'}</strong> with text selected
-          to translate into English.
+          Select text and tap <strong className="text-foreground">{config.askHotkey || 'Cmd+Shift'}</strong> to
+          translate, or hold to ask a question.
         </div>
       </div>
 
@@ -196,15 +196,10 @@ export function Settings() {
         </Field.Root>
 
         <Field.Root>
-          <Field.Label className="block mb-1.5 text-[13px] font-medium text-muted-foreground">
-            Translate Hotkey
-          </Field.Label>
-          <HotkeyRecorder
-            value={config.translateHotkey}
-            onChange={(shortcut) => updateConfig({ translateHotkey: shortcut })}
-          />
+          <Field.Label className="block mb-1.5 text-[13px] font-medium text-muted-foreground">Ask Hotkey</Field.Label>
+          <HotkeyRecorder value={config.askHotkey} onChange={(shortcut) => updateConfig({ askHotkey: shortcut })} />
           <Field.Description className="text-xs text-muted-foreground mt-1.5">
-            Select text and press this combo to translate into English.
+            Tap to translate selected text, or hold to ask a question about it.
           </Field.Description>
         </Field.Root>
 

@@ -17,7 +17,8 @@ const MIN_RECORDING_MS: u64 = 1000;
 pub enum PipelineCommand {
     Start,
     Stop,
-    Translate,
+    TranslatePress,
+    TranslateRelease,
 }
 
 pub fn spawn_pipeline_thread<R: Runtime + 'static>(
@@ -48,6 +49,10 @@ fn pipeline_loop<R: Runtime>(
     let mut recorder: Option<AudioRecorder> = None;
     let mut recording_start: Option<Instant> = None;
 
+    // Ask context — set on TranslatePress, consumed on Stop
+    let mut ask_context: Option<String> = None;
+    let mut ask_cursor: (f64, f64) = (0.0, 0.0);
+
     loop {
         let cmd = match rx.recv() {
             Ok(cmd) => cmd,
@@ -58,7 +63,7 @@ fn pipeline_loop<R: Runtime>(
         };
 
         match cmd {
-            PipelineCommand::Start => {
+            PipelineCommand::Start | PipelineCommand::TranslatePress => {
                 if recorder.is_some() {
                     eprintln!("[StarTalk] Already recording, ignoring start");
                     continue;
@@ -71,6 +76,25 @@ fn pipeline_loop<R: Runtime>(
                         serde_json::json!({ "message": "Set your OpenRouter API key first." }),
                     );
                     continue;
+                }
+
+                // For translate: grab selected text before starting mic
+                if matches!(cmd, PipelineCommand::TranslatePress) {
+                    match translate::get_selected_text() {
+                        Ok(text) => {
+                            eprintln!("[StarTalk] Ask context: \"{}\"", text);
+                            ask_cursor = get_cursor_position();
+                            ask_context = Some(text);
+                        }
+                        Err(e) => {
+                            eprintln!("[StarTalk] Failed to get selected text: {e}");
+                            let _ = app.emit(
+                                "recording:error",
+                                serde_json::json!({ "message": format!("No text selected: {e}") }),
+                            );
+                            continue;
+                        }
+                    }
                 }
 
                 // Start acquiring mic
@@ -86,12 +110,27 @@ fn pipeline_loop<R: Runtime>(
                         std::thread::sleep(std::time::Duration::from_millis(300));
 
                         // Check if user released during startup
-                        if let Ok(PipelineCommand::Stop) = rx.try_recv() {
-                            eprintln!("[StarTalk] Released during startup — cancelling");
-                            let mut rec = r;
-                            let _ = rec.stop();
-                            emit_state(&app, "idle");
-                            continue;
+                        match rx.try_recv() {
+                            Ok(PipelineCommand::Stop) | Ok(PipelineCommand::TranslateRelease) => {
+                                eprintln!("[StarTalk] Released during startup — cancelling");
+                                let mut rec = r;
+                                let _ = rec.stop();
+
+                                // If translate tap (released quickly), do translation
+                                if let Some(context) = ask_context.take() {
+                                    let _ = app.emit("sound:stop", ());
+                                    emit_state(&app, "processing");
+                                    popover::show_loading(&app, ask_cursor.0, ask_cursor.1);
+                                    match translate::translate(&http_client, &context, &config) {
+                                        Ok(result) => popover::show(&app, ask_cursor.0, ask_cursor.1, "Translation", &context, &result.translated),
+                                        Err(e) => popover::show(&app, ask_cursor.0, ask_cursor.1, "Translation", &context, &format!("Error: {e}")),
+                                    }
+                                }
+
+                                emit_state(&app, "idle");
+                                continue;
+                            }
+                            _ => {}
                         }
 
                         recorder = Some(r);
@@ -104,11 +143,12 @@ fn pipeline_loop<R: Runtime>(
                             "recording:error",
                             serde_json::json!({ "message": format!("Failed to start recording: {e}") }),
                         );
+                        ask_context = None;
                         emit_state(&app, "idle");
                     }
                 }
             }
-            PipelineCommand::Stop => {
+            PipelineCommand::Stop | PipelineCommand::TranslateRelease => {
                 let Some(mut rec) = recorder.take() else {
                     continue;
                 };
@@ -117,9 +157,24 @@ fn pipeline_loop<R: Runtime>(
                 };
 
                 let elapsed = start.elapsed().as_millis() as u64;
+                let context = ask_context.take();
+
                 if elapsed < MIN_RECORDING_MS {
                     eprintln!("[StarTalk] Recording too short ({elapsed}ms), discarding");
                     let _ = rec.stop();
+
+                    // Translate tap: short hold with context → translate
+                    if let Some(ctx) = context {
+                        let config = config_state.get();
+                        let _ = app.emit("sound:stop", ());
+                        emit_state(&app, "processing");
+                        popover::show_loading(&app, ask_cursor.0, ask_cursor.1);
+                        match translate::translate(&http_client, &ctx, &config) {
+                            Ok(result) => popover::show(&app, ask_cursor.0, ask_cursor.1, "Translation", &ctx, &result.translated),
+                            Err(e) => popover::show(&app, ask_cursor.0, ask_cursor.1, "Translation", &ctx, &format!("Error: {e}")),
+                        }
+                    }
+
                     emit_state(&app, "idle");
                     continue;
                 }
@@ -128,62 +183,30 @@ fn pipeline_loop<R: Runtime>(
                 emit_state(&app, "processing");
                 let _ = app.emit("sound:stop", ());
 
-                match process_recording(&app, &config_state, &db, &http_client, &mut rec, elapsed) {
-                    Ok(_) => {}
-                    Err(e) => {
-                        eprintln!("[StarTalk] Pipeline error: {e}");
-                        let _ = app.emit(
-                            "recording:error",
-                            serde_json::json!({ "message": format!("Transcription failed: {e}") }),
-                        );
+                if let Some(ctx) = context {
+                    // Ask mode: transcribe question, then answer
+                    match process_ask(&app, &config_state, &http_client, &mut rec, &ctx, ask_cursor) {
+                        Ok(_) => {}
+                        Err(e) => {
+                            eprintln!("[StarTalk] Ask pipeline error: {e}");
+                            popover::show(&app, ask_cursor.0, ask_cursor.1, "Error", &ctx, &format!("Error: {e}"));
+                        }
+                    }
+                } else {
+                    // Normal mode: transcribe and inject
+                    match process_recording(&app, &config_state, &db, &http_client, &mut rec, elapsed) {
+                        Ok(_) => {}
+                        Err(e) => {
+                            eprintln!("[StarTalk] Pipeline error: {e}");
+                            let _ = app.emit(
+                                "recording:error",
+                                serde_json::json!({ "message": format!("Transcription failed: {e}") }),
+                            );
+                        }
                     }
                 }
 
                 emit_state(&app, "idle");
-            }
-            PipelineCommand::Translate => {
-                if recorder.is_some() {
-                    eprintln!("[StarTalk] Can't translate while recording");
-                    continue;
-                }
-
-                let config = config_state.get();
-                if config.api_key.is_empty() {
-                    let _ = app.emit(
-                        "recording:error",
-                        serde_json::json!({ "message": "Set your OpenRouter API key first." }),
-                    );
-                    continue;
-                }
-
-                // Get selected text via Cmd+C
-                let selected = match translate::get_selected_text() {
-                    Ok(text) => text,
-                    Err(e) => {
-                        eprintln!("[StarTalk] Failed to get selected text: {e}");
-                        let _ = app.emit(
-                            "recording:error",
-                            serde_json::json!({ "message": format!("No text selected: {e}") }),
-                        );
-                        continue;
-                    }
-                };
-
-                eprintln!("[StarTalk] Translating: \"{}\"", selected);
-                let _ = app.emit("sound:translate", ());
-
-                let cursor_pos = get_cursor_position();
-                popover::show_loading(cursor_pos.0, cursor_pos.1);
-
-                match translate::translate(&http_client, &selected, &config) {
-                    Ok(result) => {
-                        popover::show(cursor_pos.0, cursor_pos.1, &selected, &result.translated);
-                    }
-                    Err(e) => {
-                        eprintln!("[StarTalk] Translation error: {e}");
-                        popover::show(cursor_pos.0, cursor_pos.1, &selected, &format!("Error: {e}"));
-                    }
-                }
             }
         }
     }
@@ -200,6 +223,54 @@ fn get_cursor_position() -> (f64, f64) {
         }
         Err(_) => (0.0, 0.0),
     }
+}
+
+fn process_ask<R: Runtime>(
+    app: &AppHandle<R>,
+    config_state: &ConfigState,
+    http_client: &reqwest::blocking::Client,
+    recorder: &mut AudioRecorder,
+    context: &str,
+    cursor: (f64, f64),
+) -> Result<(), String> {
+    let audio = recorder.stop()?;
+    let config = config_state.get();
+
+    eprintln!(
+        "[StarTalk] Ask audio: {}ms, base64 len: {}",
+        audio.duration_ms,
+        audio.wav_base64.len()
+    );
+
+    // Transcribe the voice question
+    let question = transcription::transcribe(http_client, &audio.wav_base64, &config)?;
+
+    if question.text.is_empty() {
+        eprintln!("[StarTalk] Empty question, falling back to translate");
+        popover::show_loading(app, cursor.0, cursor.1);
+        match translate::translate(http_client, context, &config) {
+            Ok(result) => popover::show(app, cursor.0, cursor.1, "Translation", context, &result.translated),
+            Err(e) => popover::show(app, cursor.0, cursor.1, "Translation", context, &format!("Error: {e}")),
+        }
+        return Ok(());
+    }
+
+    eprintln!("[StarTalk] Ask: \"{}\" about \"{}\"", question.text, context);
+
+    // Thinking phase
+    emit_state(app, "thinking");
+    popover::show_loading(app, cursor.0, cursor.1);
+
+    match translate::ask(http_client, context, &question.text, &config) {
+        Ok(answer) => {
+            popover::show(app, cursor.0, cursor.1, "Answer", &question.text, &answer.translated);
+        }
+        Err(e) => {
+            popover::show(app, cursor.0, cursor.1, "Answer", &question.text, &format!("Error: {e}"));
+        }
+    }
+
+    Ok(())
 }
 
 fn process_recording<R: Runtime>(

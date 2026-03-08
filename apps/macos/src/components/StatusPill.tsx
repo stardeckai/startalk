@@ -1,9 +1,9 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import { Loader, Mic, Star } from 'lucide-react';
+import { Loader, Mic, Sparkles, Star } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-type PillState = 'idle' | 'recording' | 'processing';
+type PillState = 'idle' | 'recording' | 'processing' | 'thinking';
 
 const pillStyles: Record<PillState, { bg: string; color: string; border: string; shadow: string }> = {
   recording: {
@@ -18,6 +18,12 @@ const pillStyles: Record<PillState, { bg: string; color: string; border: string;
     border: '1px solid oklch(0.7431 0.0391 258.37 / 0.25)',
     shadow: '0 2px 12px oklch(0.7431 0.0391 258.37 / 0.15)',
   },
+  thinking: {
+    bg: 'oklch(0.7 0.12 310 / 0.15)',
+    color: 'oklch(0.5 0.12 310)',
+    border: '1px solid oklch(0.7 0.12 310 / 0.25)',
+    shadow: '0 2px 12px oklch(0.7 0.12 310 / 0.15)',
+  },
   idle: {
     bg: 'oklch(0.5 0 0 / 0.06)',
     color: 'oklch(0.4 0 0)',
@@ -29,18 +35,21 @@ const pillStyles: Record<PillState, { bg: string; color: string; border: string;
 const dotColors: Record<PillState, string> = {
   recording: 'oklch(0.6297 0.1361 27.02)',
   processing: 'oklch(0.7431 0.0391 258.37)',
+  thinking: 'oklch(0.7 0.12 310)',
   idle: 'oklch(0.6297 0.1361 159.38 / 0.6)',
 };
 
 const icons: Record<PillState, React.ReactNode> = {
   recording: <Mic size={12} />,
   processing: <Loader size={12} className="animate-spin" />,
+  thinking: <Sparkles size={12} />,
   idle: <Star size={12} />,
 };
 
 const labels: Record<PillState, string> = {
   recording: 'Recording',
   processing: 'Transcribing',
+  thinking: 'Thinking',
   idle: 'StarTalk',
 };
 

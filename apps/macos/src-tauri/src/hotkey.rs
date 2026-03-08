@@ -112,9 +112,9 @@ pub fn set_target_shortcut(shortcut: &str) -> Result<(), String> {
     Ok(())
 }
 
-pub fn set_translate_shortcut(shortcut: &str) -> Result<(), String> {
+pub fn set_ask_shortcut(shortcut: &str) -> Result<(), String> {
     let mask = parse_shortcut(shortcut)?;
-    eprintln!("[StarTalk] set_translate_shortcut: \"{}\" -> mask=0b{:b}", shortcut, mask);
+    eprintln!("[StarTalk] set_ask_shortcut: \"{}\" -> mask=0b{:b}", shortcut, mask);
     TRANSLATE_MASK.store(mask, Ordering::SeqCst);
     TRANSLATE_ACTIVE.store(false, Ordering::SeqCst);
     Ok(())
@@ -217,18 +217,20 @@ pub fn start_monitor<R: Runtime>(app_handle: AppHandle<R>, pipeline_tx: mpsc::Se
                     }
                 }
 
-                // Check if translate shortcut is matched (tap-based, fires once on press)
+                // Check if translate shortcut is matched (hold-based: press to start, release to finish)
                 let translate = TRANSLATE_MASK.load(Ordering::SeqCst);
                 if translate != 0 && !paused {
                     let was_translate_active = TRANSLATE_ACTIVE.load(Ordering::SeqCst);
                     let translate_match = (mods & translate) == translate;
 
                     if translate_match && !was_translate_active {
-                        eprintln!("[StarTalk] translate:triggered mods=0b{:b} target=0b{:b}", mods, translate);
+                        eprintln!("[StarTalk] translate:pressed mods=0b{:b} target=0b{:b}", mods, translate);
                         TRANSLATE_ACTIVE.store(true, Ordering::SeqCst);
-                        let _ = pipeline_tx.send(PipelineCommand::Translate);
+                        let _ = pipeline_tx.send(PipelineCommand::TranslatePress);
                     } else if !translate_match && was_translate_active {
+                        eprintln!("[StarTalk] translate:released");
                         TRANSLATE_ACTIVE.store(false, Ordering::SeqCst);
+                        let _ = pipeline_tx.send(PipelineCommand::TranslateRelease);
                     }
                 }
 

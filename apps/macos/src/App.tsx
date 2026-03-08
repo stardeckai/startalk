@@ -1,6 +1,7 @@
 import { Tabs } from '@base-ui/react/tabs';
 import { BookOpen, Clock, Settings as SettingsIcon } from 'lucide-react';
 import { History } from './components/History';
+import { Popover } from './components/Popover';
 import { Settings } from './components/Settings';
 import { StatusPill } from './components/StatusPill';
 import { Vocabulary } from './components/Vocabulary';
@@ -54,6 +55,9 @@ function MainApp() {
 function App() {
   if (currentWindowLabel === 'pill') {
     return <StatusPill />;
+  }
+  if (currentWindowLabel === 'popover') {
+    return <Popover />;
   }
   return <MainApp />;
 }

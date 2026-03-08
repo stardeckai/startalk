@@ -44,7 +44,7 @@ pub fn create_tray<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
 pub fn update_icon<R: Runtime>(app: &AppHandle<R>, state: &str) {
     let icon_name = match state {
         "recording" => "tray-recording.png",
-        "processing" => "tray-processing.png",
+        "processing" | "thinking" => "tray-processing.png",
         _ => "tray-idle.png",
     };
 

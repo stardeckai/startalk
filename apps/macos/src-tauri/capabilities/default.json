@@ -2,7 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Default capabilities for StarTalk",
-  "windows": ["main", "pill"],
+  "windows": ["main", "pill", "popover"],
   "permissions": [
     "core:default",
     "shell:default",
