@@ -11,7 +11,7 @@ pub fn run() {
             tray::create_tray(app.handle())?;
 
             // Set default shortcut and start the modifier monitor
-            if let Err(e) = hotkey::set_target_shortcut("Fn+Ctrl") {
+            if let Err(e) = hotkey::set_target_shortcut("Globe") {
                 eprintln!("Warning: Failed to set default shortcut: {e}");
             }
             hotkey::start_monitor(app.handle().clone());
@@ -22,6 +22,7 @@ pub fn run() {
             commands::set_tray_icon,
             commands::update_shortcut,
             commands::check_accessibility,
+            commands::set_hotkey_paused,
         ])
         .run(tauri::generate_context!())
         .expect("error while running StarTalk");

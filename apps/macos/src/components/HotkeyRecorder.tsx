@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
+import { invoke } from '@tauri-apps/api/core';
 
 interface HotkeyRecorderProps {
   value: string;
@@ -7,11 +8,16 @@ interface HotkeyRecorderProps {
 }
 
 const DISPLAY_MAP: Record<string, string> = {
+  'Globe': '\uD83C\uDF10',
   'Fn': 'fn',
-  'Ctrl': '\u2303',
-  'Alt': '\u2325',
-  'Shift': '\u21E7',
-  'Cmd': '\u2318',
+  'LCtrl': 'L\u2303',
+  'RCtrl': 'R\u2303',
+  'LAlt': 'L\u2325',
+  'RAlt': 'R\u2325',
+  'LShift': 'L\u21E7',
+  'RShift': 'R\u21E7',
+  'LCmd': 'L\u2318',
+  'RCmd': 'R\u2318',
 };
 
 function displayShortcut(shortcut: string): string {
@@ -25,73 +31,114 @@ function displayShortcut(shortcut: string): string {
 export function HotkeyRecorder({ value, onChange }: HotkeyRecorderProps) {
   const [recording, setRecording] = useState(false);
   const [currentModifiers, setCurrentModifiers] = useState('');
-  const confirmTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastModifiers = useRef('');
+  const didCapture = useRef(false);
+  const peakMods = useRef('');
 
+  const stopRecording = useCallback(async (newShortcut?: string) => {
+    setRecording(false);
+    setCurrentModifiers('');
+    didCapture.current = false;
+    peakMods.current = '';
+    if (newShortcut) {
+      onChange(newShortcut);
+    }
+    await invoke('set_hotkey_paused', { paused: false });
+  }, [onChange]);
+
+  const startRecording = useCallback(async () => {
+    didCapture.current = false;
+    peakMods.current = '';
+    setRecording(true);
+    setCurrentModifiers('');
+    await invoke('set_hotkey_paused', { paused: true });
+  }, []);
+
+  // Listen for modifier events — track peak state, capture on full release
   useEffect(() => {
     if (!recording) return;
 
     let cancelled = false;
 
     const unlisten = listen<string>('modifiers:changed', (event) => {
-      if (cancelled) return;
+      if (cancelled || didCapture.current) return;
       const mods = event.payload;
       setCurrentModifiers(mods);
 
-      // Clear pending confirm
-      if (confirmTimer.current) {
-        clearTimeout(confirmTimer.current);
-        confirmTimer.current = null;
-      }
-
-      // If modifiers are held, start a confirm timer
-      // When they hold steady for 800ms, capture it
-      if (mods && mods.includes('+')) {
-        lastModifiers.current = mods;
-        confirmTimer.current = setTimeout(() => {
-          if (!cancelled && lastModifiers.current === mods) {
-            setRecording(false);
-            onChange(mods);
-          }
-        }, 800);
+      if (mods) {
+        // Track the peak (most modifiers held at once)
+        const currentCount = mods.split('+').length;
+        const peakCount = peakMods.current ? peakMods.current.split('+').length : 0;
+        if (currentCount >= peakCount) {
+          peakMods.current = mods;
+        }
+      } else if (peakMods.current) {
+        // All modifiers released — capture the peak combo
+        didCapture.current = true;
+        stopRecording(peakMods.current);
       }
     });
 
     return () => {
       cancelled = true;
       unlisten.then((fn) => fn());
-      if (confirmTimer.current) {
-        clearTimeout(confirmTimer.current);
+    };
+  }, [recording, stopRecording]);
+
+  // Escape key / click outside to cancel
+  useEffect(() => {
+    if (!recording) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        stopRecording();
       }
     };
-  }, [recording, onChange]);
+
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-hotkey-recorder]')) {
+        stopRecording();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    const timer = setTimeout(() => {
+      window.addEventListener('click', handleClickOutside);
+    }, 100);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('click', handleClickOutside);
+      clearTimeout(timer);
+    };
+  }, [recording, stopRecording]);
 
   return (
-    <button
-      onClick={() => {
-        setRecording(true);
-        setCurrentModifiers('');
-      }}
-      style={{
-        width: '100%',
-        padding: '8px 12px',
-        borderRadius: 6,
-        border: recording ? '2px solid #007aff' : '1px solid #ccc',
-        fontSize: 16,
-        background: recording ? '#e8f0fe' : 'transparent',
-        cursor: 'pointer',
-        textAlign: 'left',
-        fontFamily: 'inherit',
-        color: 'inherit',
-        boxSizing: 'border-box',
-        letterSpacing: 2,
-      }}
-    >
-      {recording
-        ? currentModifiers
-          ? `${displayShortcut(currentModifiers)} — hold to set...`
-          : 'Press & hold your shortcut...'
-        : displayShortcut(value)}
-    </button>
+    <div data-hotkey-recorder>
+      <button
+        onClick={recording ? () => stopRecording() : startRecording}
+        style={{
+          width: '100%',
+          padding: '8px 12px',
+          borderRadius: 'var(--radius)',
+          border: recording ? '2px solid var(--primary)' : '1px solid var(--border)',
+          fontSize: 16,
+          background: recording ? 'var(--muted)' : 'var(--background)',
+          color: 'var(--foreground)',
+          cursor: 'pointer',
+          textAlign: 'left',
+          fontFamily: 'inherit',
+          boxSizing: 'border-box',
+          letterSpacing: 2,
+        }}
+      >
+        {recording
+          ? currentModifiers
+            ? displayShortcut(currentModifiers)
+            : 'Press your combo...'
+          : displayShortcut(value)}
+      </button>
+    </div>
   );
 }

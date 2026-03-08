@@ -7,7 +7,7 @@ import { setTrayState } from '../tray';
 import { useAppStore } from '../store';
 import { playStartSound, playStopSound } from '../sounds';
 
-const MIN_RECORDING_MS = 300;
+const MIN_RECORDING_MS = 1000;
 
 export function useRecordingFlow() {
   const recorder = useRef(new AudioRecorder());

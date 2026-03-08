@@ -13,6 +13,17 @@ function getStore() {
   return storePromise;
 }
 
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '8px 12px',
+  borderRadius: 'var(--radius)',
+  border: '1px solid var(--border)',
+  fontSize: 14,
+  boxSizing: 'border-box',
+  background: 'var(--background)',
+  color: 'var(--foreground)',
+};
+
 export function Settings() {
   const config = useAppStore((s) => s.config);
   const setConfig = useAppStore((s) => s.setConfig);
@@ -22,7 +33,6 @@ export function Settings() {
   const isProcessing = useAppStore((s) => s.isProcessing);
   const [hasAccessibility, setHasAccessibility] = useState<boolean | null>(null);
 
-  // Check accessibility permission on mount and periodically
   useEffect(() => {
     const check = async () => {
       try {
@@ -37,7 +47,6 @@ export function Settings() {
     return () => clearInterval(interval);
   }, []);
 
-  // Load saved config on mount
   useEffect(() => {
     (async () => {
       const store = await getStore();
@@ -67,18 +76,21 @@ export function Settings() {
   );
 
   return (
-    <div style={{ padding: 24, fontFamily: '-apple-system, system-ui, sans-serif' }}>
-      <h1 style={{ fontSize: 20, marginBottom: 20 }}>StarTalk Settings</h1>
+    <div style={{ padding: 24 }}>
+      <h1 style={{ fontSize: 20, marginBottom: 20, color: 'var(--foreground)' }}>
+        StarTalk Settings
+      </h1>
 
       {hasAccessibility === false && (
         <div
           style={{
             padding: 12,
-            background: '#f8d7da',
-            borderRadius: 6,
+            background: 'oklch(0.6297 0.1361 27.02 / 0.1)',
+            borderRadius: 'var(--radius)',
             marginBottom: 16,
             fontSize: 13,
-            color: '#721c24',
+            color: 'var(--destructive)',
+            border: '1px solid oklch(0.6297 0.1361 27.02 / 0.2)',
           }}
         >
           <strong>Accessibility permission required.</strong> StarTalk needs this to
@@ -93,11 +105,17 @@ export function Settings() {
         <div
           style={{
             padding: 12,
-            background: isRecording ? '#d4edda' : '#cce5ff',
-            borderRadius: 6,
+            background: isRecording
+              ? 'oklch(0.6297 0.1361 159.38 / 0.1)'
+              : 'oklch(0.7431 0.0391 258.37 / 0.15)',
+            borderRadius: 'var(--radius)',
             marginBottom: 16,
             fontSize: 13,
             fontWeight: 500,
+            color: isRecording ? 'var(--success)' : 'var(--accent-blue)',
+            border: isRecording
+              ? '1px solid oklch(0.6297 0.1361 159.38 / 0.2)'
+              : '1px solid oklch(0.7431 0.0391 258.37 / 0.25)',
           }}
         >
           {isRecording ? 'Recording... release to transcribe' : 'Transcribing...'}
@@ -113,14 +131,7 @@ export function Settings() {
           value={config.apiKey}
           onChange={(e) => updateConfig({ apiKey: e.target.value })}
           placeholder="sk-or-..."
-          style={{
-            width: '100%',
-            padding: '8px 12px',
-            borderRadius: 6,
-            border: '1px solid #ccc',
-            fontSize: 14,
-            boxSizing: 'border-box',
-          }}
+          style={inputStyle}
         />
       </div>
 
@@ -132,14 +143,7 @@ export function Settings() {
           type="text"
           value={config.model}
           onChange={(e) => updateConfig({ model: e.target.value })}
-          style={{
-            width: '100%',
-            padding: '8px 12px',
-            borderRadius: 6,
-            border: '1px solid #ccc',
-            fontSize: 14,
-            boxSizing: 'border-box',
-          }}
+          style={inputStyle}
         />
       </div>
 
@@ -151,7 +155,7 @@ export function Settings() {
           value={config.hotkey}
           onChange={(shortcut) => updateConfig({ hotkey: shortcut })}
         />
-        <small style={{ color: '#666' }}>
+        <small style={{ color: 'var(--muted-foreground)' }}>
           Click, then hold your desired modifier combo for 1 second.
           {hasAccessibility === false && ' (Requires accessibility permission)'}
         </small>
@@ -165,15 +169,7 @@ export function Settings() {
           value={config.transcriptionPrompt}
           onChange={(e) => updateConfig({ transcriptionPrompt: e.target.value })}
           rows={3}
-          style={{
-            width: '100%',
-            padding: '8px 12px',
-            borderRadius: 6,
-            border: '1px solid #ccc',
-            fontSize: 14,
-            resize: 'vertical',
-            boxSizing: 'border-box',
-          }}
+          style={{ ...inputStyle, resize: 'vertical' }}
         />
       </div>
 
@@ -181,10 +177,12 @@ export function Settings() {
         <div
           style={{
             padding: 12,
-            background: '#fff3cd',
-            borderRadius: 6,
+            background: 'oklch(0.6297 0.1361 73.45 / 0.1)',
+            borderRadius: 'var(--radius)',
             marginBottom: 16,
             fontSize: 13,
+            color: 'var(--warning)',
+            border: '1px solid oklch(0.6297 0.1361 73.45 / 0.2)',
           }}
         >
           Enter your OpenRouter API key to start using StarTalk.
@@ -195,11 +193,12 @@ export function Settings() {
         <div
           style={{
             padding: 12,
-            background: '#f8d7da',
-            borderRadius: 6,
+            background: 'oklch(0.6297 0.1361 27.02 / 0.1)',
+            borderRadius: 'var(--radius)',
             marginBottom: 16,
             fontSize: 13,
-            color: '#721c24',
+            color: 'var(--destructive)',
+            border: '1px solid oklch(0.6297 0.1361 27.02 / 0.2)',
           }}
         >
           {error}
@@ -214,10 +213,12 @@ export function Settings() {
           <div
             style={{
               padding: 12,
-              background: '#f0f0f0',
-              borderRadius: 6,
+              background: 'var(--muted)',
+              borderRadius: 'var(--radius)',
               fontSize: 13,
               whiteSpace: 'pre-wrap',
+              color: 'var(--foreground)',
+              border: '1px solid var(--border)',
             }}
           >
             {lastTranscription}

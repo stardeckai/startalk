@@ -1,23 +1,30 @@
 :root {
-  font-family: -apple-system, system-ui, BlinkMacSystemFont, sans-serif;
+  color-scheme: light;
+  font-family: 'Wix Madefor Text', -apple-system, system-ui, sans-serif;
   font-size: 14px;
   line-height: 1.5;
-  color: #1d1d1f;
-  background-color: #f5f5f7;
   -webkit-font-smoothing: antialiased;
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    color: #f5f5f7;
-    background-color: #1d1d1f;
-  }
+  --radius: 0.6rem;
+  --background: oklch(1 0 0);
+  --foreground: #292524;
+  --primary: oklch(0.6297 0.1361 1.7);
+  --primary-foreground: oklch(0.985 0 0);
+  --muted: oklch(97% 0.001 106.423);
+  --muted-foreground: oklch(0.556 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.94 0 0);
+  --ring: oklch(0.708 0 0);
+  --success: oklch(0.6297 0.1361 159.38);
+  --success-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.6297 0.1361 27.02);
+  --destructive-foreground: oklch(0.985 0 0);
+  --warning: oklch(0.6297 0.1361 73.45);
+  --warning-foreground: oklch(0.985 0 0);
+  --accent-blue: oklch(0.7431 0.0391 258.37);
 
-  input, textarea {
-    color: #f5f5f7;
-    background-color: #2d2d2f;
-    border-color: #48484a;
-  }
+  color: var(--foreground);
+  background-color: var(--background);
 }
 
 * {
