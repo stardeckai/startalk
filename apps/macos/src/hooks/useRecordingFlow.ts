@@ -106,14 +106,14 @@ export function useRecordingFlow() {
           prompt: config.transcriptionPrompt,
           vocabulary: config.vocabulary,
         });
-        console.log(`[StarTalk] Transcription complete: "${result.text}" (API: ${Date.now() - t0}ms, model reported: ${result.durationMs}ms)`);
+        console.log(`[StarTalk] Transcription complete: "${result.text}" (API: ${Date.now() - t0}ms, model reported: ${result.durationMs}ms, cost: ${result.cost != null ? `$${result.cost.toFixed(6)}` : 'n/a'})`);
 
         if (result.text) {
           setLastTranscription(result.text);
           await injectText(result.text);
           console.log(`[StarTalk] Saving recording: ${recDurationMs}ms, ${base64.length} chars`);
           try {
-            await saveRecording(recDurationMs, result.text, base64, mediaType);
+            await saveRecording(recDurationMs, result.text, base64, mediaType, result.cost);
             console.log('[StarTalk] Recording saved to DB');
             await invoke('emit_recording_saved');
           } catch (saveErr) {

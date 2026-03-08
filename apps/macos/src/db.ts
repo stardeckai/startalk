@@ -14,6 +14,7 @@ export interface Recording {
   transcription: string;
   audio_size: number;
   audio_type: string;
+  cost: number | null;
 }
 
 export interface RecordingAudio {
@@ -35,18 +36,19 @@ export async function saveRecording(
   transcription: string,
   audioBase64: string,
   audioType: string,
+  cost: number | null,
 ): Promise<void> {
   const d = await getDb();
   await d.execute(
-    'INSERT INTO recordings (duration_ms, transcription, audio_base64, audio_type) VALUES ($1, $2, $3, $4)',
-    [durationMs, transcription, audioBase64, audioType],
+    'INSERT INTO recordings (duration_ms, transcription, audio_base64, audio_type, cost) VALUES ($1, $2, $3, $4, $5)',
+    [durationMs, transcription, audioBase64, audioType, cost],
   );
 }
 
 export async function getRecordings(limit = 50, offset = 0): Promise<Recording[]> {
   const d = await getDb();
   return d.select<Recording[]>(
-    'SELECT id, created_at, duration_ms, transcription, length(audio_base64) * 3 / 4 as audio_size, audio_type FROM recordings ORDER BY created_at DESC LIMIT $1 OFFSET $2',
+    'SELECT id, created_at, duration_ms, transcription, length(audio_base64) * 3 / 4 as audio_size, audio_type, cost FROM recordings ORDER BY created_at DESC LIMIT $1 OFFSET $2',
     [limit, offset],
   );
 }

@@ -18,6 +18,11 @@ fn db_migrations() -> Vec<Migration> {
             audio_type TEXT NOT NULL
         )",
         kind: MigrationKind::Up,
+    }, Migration {
+        version: 2,
+        description: "add cost column",
+        sql: "ALTER TABLE recordings ADD COLUMN cost REAL",
+        kind: MigrationKind::Up,
     }]
 }
 

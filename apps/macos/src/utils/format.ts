@@ -10,6 +10,11 @@ export function formatDuration(ms: number): string {
   return `${Math.floor(secs / 60)}m ${secs % 60}s`;
 }
 
+export function formatCost(cost: number): string {
+  if (cost < 0.01) return `$${cost.toFixed(4)}`;
+  return `$${cost.toFixed(2)}`;
+}
+
 export function formatDate(iso: string): string {
   const d = new Date(iso + 'Z');
   return d.toLocaleDateString(undefined, {

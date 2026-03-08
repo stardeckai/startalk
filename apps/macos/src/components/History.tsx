@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { Play, Square, Copy, Trash2 } from 'lucide-react';
 import { getRecordings, getRecordingAudio, deleteRecording, type Recording } from '../db';
-import { formatDate, formatDuration, formatSize } from '../utils/format';
+import { formatDate, formatDuration, formatSize, formatCost } from '../utils/format';
 
 export function History() {
   const [recordings, setRecordings] = useState<Recording[]>([]);
@@ -72,7 +72,7 @@ export function History() {
         <div key={rec.id} className="px-4 py-3">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs text-muted-foreground">
-              {formatDate(rec.created_at)} · {formatDuration(rec.duration_ms)} · {formatSize(rec.audio_size)}
+              {formatDate(rec.created_at)} · {formatDuration(rec.duration_ms)} · {formatSize(rec.audio_size)}{rec.cost != null && ` · ${formatCost(rec.cost)}`}
             </span>
             <div className="flex gap-1">
               <button

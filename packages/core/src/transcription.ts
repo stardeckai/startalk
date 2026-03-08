@@ -84,8 +84,9 @@ export async function transcribe(
 
     const data = await response.json();
     const text = data.choices?.[0]?.message?.content ?? "";
+    const cost: number | null = data.usage?.cost ?? null;
 
-    return { text: text.trim(), durationMs: Date.now() - start };
+    return { text: text.trim(), durationMs: Date.now() - start, cost };
 }
 
 function audioFormat(mediaType: string): string {

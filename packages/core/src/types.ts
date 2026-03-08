@@ -19,6 +19,7 @@ export interface TranscriptionOptions {
 export interface TranscriptionResult {
   text: string;
   durationMs: number;
+  cost: number | null;
 }
 
 export type HistoryRetention = '24h' | '3d' | '7d';
