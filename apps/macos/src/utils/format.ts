@@ -11,8 +11,7 @@ export function formatDuration(ms: number): string {
 }
 
 export function formatCost(cost: number): string {
-  if (cost < 0.01) return `$${cost.toFixed(4)}`;
-  return `$${cost.toFixed(2)}`;
+  return `$${cost.toFixed(6)}`;
 }
 
 export function formatDate(iso: string): string {
