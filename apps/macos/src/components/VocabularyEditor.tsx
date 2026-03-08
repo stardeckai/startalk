@@ -1,13 +1,14 @@
-import { useState } from 'react';
-import { Plus, X } from 'lucide-react';
 import type { VocabularyEntry } from '@startalk/core';
+import { Plus, X } from 'lucide-react';
+import { useState } from 'react';
 
 interface VocabularyEditorProps {
   value: VocabularyEntry[];
   onChange: (entries: VocabularyEntry[]) => void;
 }
 
-const inputClassName = 'w-full px-2 py-1.5 border border-border text-sm bg-background text-foreground font-inherit outline-none focus:border-primary';
+const inputClassName =
+  'w-full px-2 py-1.5 border border-border text-sm bg-background text-foreground font-inherit outline-none focus:border-primary';
 
 export function VocabularyEditor({ value, onChange }: VocabularyEditorProps) {
   const [word, setWord] = useState('');
@@ -41,15 +42,19 @@ export function VocabularyEditor({ value, onChange }: VocabularyEditorProps) {
     <div className="space-y-3">
       {/* Known words */}
       <div>
-        <label className="block mb-1.5 text-xs text-muted-foreground">Known words & phrases</label>
+        <span className="block mb-1.5 text-xs text-muted-foreground">Known words & phrases</span>
         {knownWords.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-2">
             {knownWords.map((entry) => {
               const idx = value.indexOf(entry);
               return (
-                <span key={idx} className="inline-flex items-center gap-1 px-2 py-0.5 text-[13px] border border-border bg-muted text-foreground">
+                <span
+                  key={idx}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 text-[13px] border border-border bg-muted text-foreground"
+                >
                   {entry.correct}
                   <button
+                    type="button"
                     onClick={() => handleRemove(idx)}
                     className="shrink-0 p-0 text-muted-foreground hover:text-destructive cursor-pointer bg-transparent border-none"
                   >
@@ -65,11 +70,17 @@ export function VocabularyEditor({ value, onChange }: VocabularyEditorProps) {
             type="text"
             value={word}
             onChange={(e) => setWord(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddWord(); } }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAddWord();
+              }
+            }}
             placeholder="e.g. Stardeck, OpenRouter..."
             className={`${inputClassName} flex-1`}
           />
           <button
+            type="button"
             onClick={handleAddWord}
             disabled={!word.trim()}
             className="shrink-0 px-2 py-1.5 border border-border bg-muted text-foreground text-sm cursor-pointer font-inherit hover:bg-border disabled:opacity-40 disabled:cursor-default flex items-center gap-1"
@@ -81,7 +92,7 @@ export function VocabularyEditor({ value, onChange }: VocabularyEditorProps) {
 
       {/* Corrections */}
       <div>
-        <label className="block mb-1.5 text-xs text-muted-foreground">Spelling corrections</label>
+        <span className="block mb-1.5 text-xs text-muted-foreground">Spelling corrections</span>
         {corrections.length > 0 && (
           <div className="border border-border divide-y divide-border mb-2">
             {corrections.map((entry) => {
@@ -92,6 +103,7 @@ export function VocabularyEditor({ value, onChange }: VocabularyEditorProps) {
                   <span className="text-muted-foreground">→</span>
                   <span className="text-foreground flex-1 truncate font-medium">{entry.correct}</span>
                   <button
+                    type="button"
                     onClick={() => handleRemove(idx)}
                     className="shrink-0 p-0.5 text-muted-foreground hover:text-destructive cursor-pointer bg-transparent border-none"
                     title="Remove"
@@ -108,7 +120,12 @@ export function VocabularyEditor({ value, onChange }: VocabularyEditorProps) {
             type="text"
             value={spoken}
             onChange={(e) => setSpoken(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddCorrection(); } }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAddCorrection();
+              }
+            }}
             placeholder="Heard as..."
             className={`${inputClassName} flex-1`}
           />
@@ -116,11 +133,17 @@ export function VocabularyEditor({ value, onChange }: VocabularyEditorProps) {
             type="text"
             value={correct}
             onChange={(e) => setCorrect(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddCorrection(); } }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAddCorrection();
+              }
+            }}
             placeholder="Correct spelling"
             className={`${inputClassName} flex-1`}
           />
           <button
+            type="button"
             onClick={handleAddCorrection}
             disabled={!spoken.trim() || !correct.trim()}
             className="shrink-0 px-2 py-1.5 border border-border bg-muted text-foreground text-sm cursor-pointer font-inherit hover:bg-border disabled:opacity-40 disabled:cursor-default flex items-center gap-1"

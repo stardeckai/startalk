@@ -1,14 +1,24 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Field } from '@base-ui/react/field';
+import { Select } from '@base-ui/react/select';
+import type { AppConfig, HistoryRetention } from '@startalk/core';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { load, type Store } from '@tauri-apps/plugin-store';
-import { Field } from '@base-ui/react/field';
-import { Select } from '@base-ui/react/select';
-import { Check, ChevronDown, ChevronRight, ShieldAlert, Mic, Loader, KeyRound, AlertTriangle, AlertCircle } from 'lucide-react';
+import {
+  AlertCircle,
+  AlertTriangle,
+  Check,
+  ChevronDown,
+  ChevronRight,
+  KeyRound,
+  Loader,
+  Mic,
+  ShieldAlert,
+} from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import startalkIcon from '../assets/Startalk.png';
 import { useAppStore } from '../store';
 import { HotkeyRecorder } from './HotkeyRecorder';
-import type { AppConfig, HistoryRetention } from '@startalk/core';
-import startalkIcon from '../assets/Startalk.png';
 
 let storePromise: Promise<Store> | null = null;
 function getStore() {
@@ -24,7 +34,8 @@ const retentionOptions = [
   { label: '7 days', value: '7d' },
 ] as const;
 
-const inputClassName = 'w-full px-3 py-2 border border-border text-sm bg-background text-foreground font-inherit outline-none focus:border-primary';
+const inputClassName =
+  'w-full px-3 py-2 border border-border text-sm bg-background text-foreground font-inherit outline-none focus:border-primary';
 
 export function Settings() {
   const config = useAppStore((s) => s.config);
@@ -53,14 +64,18 @@ export function Settings() {
     };
     check();
     interval = setInterval(check, 3000);
-    return () => { if (interval) clearInterval(interval); };
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, []);
 
   useEffect(() => {
     const unlisten = listen('hotkey:status', (event) => {
       setHotkeyFailed(event.payload === 'failed');
     });
-    return () => { unlisten.then((fn) => fn()); };
+    return () => {
+      unlisten.then((fn) => fn());
+    };
   }, []);
 
   useEffect(() => {
@@ -110,16 +125,27 @@ export function Settings() {
 
       {/* Instructions */}
       <div className="px-4 py-3 text-[13px] text-muted-foreground border-b border-border">
-        Hold <strong className="text-foreground">{config.hotkey || 'Globe'}</strong> to record, release to transcribe into the focused input.
+        Hold <strong className="text-foreground">{config.hotkey || 'Globe'}</strong> to record, release to transcribe
+        into the focused input.
       </div>
+
+      {/* Last transcription */}
+      {lastTranscription && (
+        <div className="border-b border-border px-4 py-3">
+          <span className="block mb-1.5 text-[13px] font-medium text-muted-foreground">Last Transcription</span>
+          <div className="px-3 py-2 bg-muted text-[13px] whitespace-pre-wrap text-foreground border border-border">
+            {lastTranscription}
+          </div>
+        </div>
+      )}
 
       {/* Alerts — full-bleed borders */}
       {(hasAccessibility === false || hotkeyFailed) && (
         <div className="flex items-start gap-3 px-4 py-3 text-[13px] text-destructive bg-destructive/10 border-b border-destructive/20">
           <ShieldAlert size={16} className="shrink-0 mt-0.5" />
           <div>
-            <strong>Permissions required.</strong> StarTalk needs Accessibility and Input Monitoring
-            to detect hotkeys and type text.
+            <strong>Permissions required.</strong> StarTalk needs Accessibility and Input Monitoring to detect hotkeys
+            and type text.
             <br />
             Go to <strong>System Settings → Privacy & Security → Accessibility</strong> and{' '}
             <strong>Input Monitoring</strong>, then enable StarTalk. Restart the app after granting.
@@ -128,11 +154,13 @@ export function Settings() {
       )}
 
       {(isRecording || isProcessing) && (
-        <div className={`flex items-center gap-2 px-4 py-3 text-[13px] font-medium border-b ${
-          isRecording
-            ? 'text-success bg-success/10 border-success/20'
-            : 'text-accent-blue bg-accent-blue/15 border-accent-blue/25'
-        }`}>
+        <div
+          className={`flex items-center gap-2 px-4 py-3 text-[13px] font-medium border-b ${
+            isRecording
+              ? 'text-success bg-success/10 border-success/20'
+              : 'text-accent-blue bg-accent-blue/15 border-accent-blue/25'
+          }`}
+        >
           {isRecording ? <Mic size={14} /> : <Loader size={14} className="animate-spin" />}
           {isRecording ? 'Recording... release to transcribe' : 'Transcribing...'}
         </div>
@@ -165,11 +193,10 @@ export function Settings() {
         </Field.Root>
 
         <Field.Root>
-          <Field.Label className="block mb-1.5 text-[13px] font-medium text-muted-foreground">Push-to-Talk Hotkey</Field.Label>
-          <HotkeyRecorder
-            value={config.hotkey}
-            onChange={(shortcut) => updateConfig({ hotkey: shortcut })}
-          />
+          <Field.Label className="block mb-1.5 text-[13px] font-medium text-muted-foreground">
+            Push-to-Talk Hotkey
+          </Field.Label>
+          <HotkeyRecorder value={config.hotkey} onChange={(shortcut) => updateConfig({ hotkey: shortcut })} />
           <Field.Description className="text-xs text-muted-foreground mt-1.5">
             Click, then hold your desired modifier combo for 1 second.
             {hasAccessibility === false && ' (Requires accessibility permission)'}
@@ -177,14 +204,18 @@ export function Settings() {
         </Field.Root>
 
         <Field.Root>
-          <Field.Label className="block mb-1.5 text-[13px] font-medium text-muted-foreground">History Retention</Field.Label>
+          <Field.Label className="block mb-1.5 text-[13px] font-medium text-muted-foreground">
+            History Retention
+          </Field.Label>
           <Select.Root
             value={config.historyRetention ?? '24h'}
             onValueChange={(val) => updateConfig({ historyRetention: val as HistoryRetention })}
           >
             <Select.Trigger className={`${inputClassName} flex items-center justify-between cursor-pointer`}>
               <Select.Value placeholder="Select..." />
-              <Select.Icon><ChevronDown size={14} /></Select.Icon>
+              <Select.Icon>
+                <ChevronDown size={14} />
+              </Select.Icon>
             </Select.Trigger>
             <Select.Portal>
               <Select.Positioner sideOffset={4}>
@@ -208,13 +239,12 @@ export function Settings() {
             </Select.Portal>
           </Select.Root>
         </Field.Root>
-
       </div>
 
       {/* Last transcription */}
       {lastTranscription && (
         <div className="border-t border-border px-4 py-3">
-          <label className="block mb-1.5 text-[13px] font-medium text-muted-foreground">Last Transcription</label>
+          <span className="block mb-1.5 text-[13px] font-medium text-muted-foreground">Last Transcription</span>
           <div className="px-3 py-2 bg-muted text-[13px] whitespace-pre-wrap text-foreground border border-border">
             {lastTranscription}
           </div>
@@ -224,13 +254,16 @@ export function Settings() {
       {/* API Key — collapsible at bottom */}
       <div className="border-t border-border">
         <button
+          type="button"
           onClick={() => setApiKeyOpen(!apiKeyOpen)}
           className="w-full flex items-center gap-2 px-4 py-3 text-[13px] font-medium text-muted-foreground bg-transparent border-none cursor-pointer font-inherit hover:text-foreground"
         >
           <ChevronRight size={12} className={`transition-transform duration-200 ${apiKeyOpen ? 'rotate-90' : ''}`} />
           <KeyRound size={13} />
           OpenRouter API Key
-          {config.apiKey && <span className="ml-auto text-xs text-muted-foreground/60">••••{config.apiKey.slice(-4)}</span>}
+          {config.apiKey && (
+            <span className="ml-auto text-xs text-muted-foreground/60">••••{config.apiKey.slice(-4)}</span>
+          )}
         </button>
         {apiKeyOpen && (
           <div className="px-4 pb-3">

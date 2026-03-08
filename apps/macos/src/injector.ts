@@ -20,7 +20,13 @@ async function switchToEnglishInput(): Promise<string | null> {
       'tell application "System Events" to get input source id of current input source',
     );
     // If already English, no switch needed
-    if (current.includes('ABC') || current.includes('US') || current.includes('British') || current.includes('Australian') || current.includes('English')) {
+    if (
+      current.includes('ABC') ||
+      current.includes('US') ||
+      current.includes('British') ||
+      current.includes('Australian') ||
+      current.includes('English')
+    ) {
       return null;
     }
     // Switch to ABC (standard English) input source
@@ -59,17 +65,13 @@ export async function injectText(text: string): Promise<void> {
   await runOsascript(`set the clipboard to ${escapeForAppleScript(text)}`);
 
   // Simulate Cmd+V
-  await runOsascript(
-    'tell application "System Events" to keystroke "v" using command down',
-  );
+  await runOsascript('tell application "System Events" to keystroke "v" using command down');
 
   // Restore clipboard and input source after a short delay
   setTimeout(async () => {
     if (prevClipboard) {
       try {
-        await runOsascript(
-          `set the clipboard to ${escapeForAppleScript(prevClipboard)}`,
-        );
+        await runOsascript(`set the clipboard to ${escapeForAppleScript(prevClipboard)}`);
       } catch {
         // Best-effort restore
       }

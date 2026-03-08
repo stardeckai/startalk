@@ -23,7 +23,9 @@ export class AudioRecorder {
   }
 
   private releaseStream() {
-    this.stream?.getTracks().forEach((t) => t.stop());
+    this.stream?.getTracks().forEach((t) => {
+      t.stop();
+    });
     this.stream = null;
   }
 
@@ -51,9 +53,7 @@ export class AudioRecorder {
     const clonedTrack = stream.getAudioTracks()[0].clone();
     const recordingStream = new MediaStream([clonedTrack]);
 
-    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-      ? 'audio/webm;codecs=opus'
-      : undefined;
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : undefined;
 
     this.mediaRecorder = new MediaRecorder(recordingStream, { mimeType });
 
@@ -80,7 +80,9 @@ export class AudioRecorder {
         const mimeType = this.mediaRecorder?.mimeType ?? 'audio/webm';
         const blob = new Blob(this.chunks, { type: mimeType });
         // Stop the cloned track, keep the shared stream alive
-        this.mediaRecorder?.stream.getTracks().forEach((t) => t.stop());
+        this.mediaRecorder?.stream.getTracks().forEach((t) => {
+          t.stop();
+        });
         this.mediaRecorder = null;
         this.chunks = [];
         // Schedule mic release after idle period

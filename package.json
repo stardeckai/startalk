@@ -4,6 +4,15 @@
   "scripts": {
     "dev": "pnpm --filter @startalk/macos tauri dev",
     "build": "pnpm --filter @startalk/core build && pnpm --filter @startalk/macos tauri build",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "lint": "biome lint",
+    "lint:fix": "biome lint --fix",
+    "format": "biome format",
+    "format:fix": "biome format --fix",
+    "check": "biome check",
+    "check:fix": "biome check --fix"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.6"
   }
 }

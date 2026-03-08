@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
-import { listen } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
-import { Mic, Loader, Star } from 'lucide-react';
+import { listen } from '@tauri-apps/api/event';
+import { Loader, Mic, Star } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
 type PillState = 'idle' | 'recording' | 'processing';
 
@@ -58,9 +58,10 @@ export function StatusPill() {
     const unlisten = listen('pill:state', (event) => {
       setState(event.payload as PillState);
     });
-    return () => { unlisten.then((fn) => fn()); };
+    return () => {
+      unlisten.then((fn) => fn());
+    };
   }, []);
-
 
   const expanded = state !== 'idle' || hovered;
   const s = pillStyles[state];
@@ -79,6 +80,8 @@ export function StatusPill() {
   };
 
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: No keyboard interaction in overlay window
+    // biome-ignore lint/a11y/noStaticElementInteractions: Overlay window container
     <div
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -106,7 +109,8 @@ export function StatusPill() {
               className="w-2 h-2 rounded-full shrink-0"
               style={{
                 background: dotColors[state],
-                animation: state !== 'idle' ? `pulse ${state === 'recording' ? '1s' : '0.6s'} ease-in-out infinite` : 'none',
+                animation:
+                  state !== 'idle' ? `pulse ${state === 'recording' ? '1s' : '0.6s'} ease-in-out infinite` : 'none',
               }}
             />
             {icons[state]}

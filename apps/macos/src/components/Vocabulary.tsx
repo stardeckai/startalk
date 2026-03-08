@@ -1,9 +1,9 @@
-import { useCallback } from 'react';
-import { load, type Store } from '@tauri-apps/plugin-store';
 import { Field } from '@base-ui/react/field';
+import type { AppConfig } from '@startalk/core';
+import { load, type Store } from '@tauri-apps/plugin-store';
+import { useCallback } from 'react';
 import { useAppStore } from '../store';
 import { VocabularyEditor } from './VocabularyEditor';
-import type { AppConfig } from '@startalk/core';
 
 let storePromise: Promise<Store> | null = null;
 function getStore() {
@@ -13,7 +13,8 @@ function getStore() {
   return storePromise;
 }
 
-const inputClassName = 'w-full px-3 py-2 border border-border text-sm bg-background text-foreground font-inherit outline-none focus:border-primary';
+const inputClassName =
+  'w-full px-3 py-2 border border-border text-sm bg-background text-foreground font-inherit outline-none focus:border-primary';
 
 export function Vocabulary() {
   const config = useAppStore((s) => s.config);
@@ -47,10 +48,7 @@ export function Vocabulary() {
 
       <Field.Root>
         <Field.Label className="block mb-1.5 text-[13px] font-medium text-muted-foreground">Vocabulary</Field.Label>
-        <VocabularyEditor
-          value={config.vocabulary ?? []}
-          onChange={(vocabulary) => updateConfig({ vocabulary })}
-        />
+        <VocabularyEditor value={config.vocabulary ?? []} onChange={(vocabulary) => updateConfig({ vocabulary })} />
         <Field.Description className="text-xs text-muted-foreground mt-1.5">
           Add words you use often, or correct common mishearings.
         </Field.Description>

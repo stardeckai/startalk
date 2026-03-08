@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { Play, Square, Copy, Trash2 } from 'lucide-react';
-import { getRecordings, getRecordingAudio, deleteRecording, type Recording } from '../db';
-import { formatDate, formatDuration, formatSize, formatCost } from '../utils/format';
+import { Copy, Play, Square, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { deleteRecording, getRecordingAudio, getRecordings, type Recording } from '../db';
+import { formatCost, formatDate, formatDuration, formatSize } from '../utils/format';
 
 export function History() {
   const [recordings, setRecordings] = useState<Recording[]>([]);
@@ -21,7 +21,9 @@ export function History() {
   useEffect(() => {
     load();
     const unlisten = listen('recording:saved', () => load());
-    return () => { unlisten.then((fn) => fn()); };
+    return () => {
+      unlisten.then((fn) => fn());
+    };
   }, [load]);
 
   const stopPlayback = () => {
@@ -72,10 +74,12 @@ export function History() {
         <div key={rec.id} className="px-4 py-3">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-xs text-muted-foreground">
-              {formatDate(rec.created_at)} · {formatDuration(rec.duration_ms)} · {formatSize(rec.audio_size)}{rec.cost != null && ` · ${formatCost(rec.cost)}`}
+              {formatDate(rec.created_at)} · {formatDuration(rec.duration_ms)} · {formatSize(rec.audio_size)}
+              {rec.cost != null && ` · ${formatCost(rec.cost)}`}
             </span>
             <div className="flex gap-1">
               <button
+                type="button"
                 onClick={() => handlePlay(rec)}
                 className="inline-flex items-center px-1.5 py-0.5 border border-border bg-muted text-foreground text-[11px] cursor-pointer font-inherit hover:bg-border"
                 title={playingId === rec.id ? 'Stop' : 'Play'}
@@ -83,6 +87,7 @@ export function History() {
                 {playingId === rec.id ? <Square size={10} /> : <Play size={10} />}
               </button>
               <button
+                type="button"
                 onClick={() => handleCopy(rec.transcription)}
                 className="inline-flex items-center px-1.5 py-0.5 border border-border bg-muted text-foreground text-[11px] cursor-pointer font-inherit hover:bg-border"
                 title="Copy"
@@ -90,6 +95,7 @@ export function History() {
                 <Copy size={10} />
               </button>
               <button
+                type="button"
                 onClick={() => handleDelete(rec.id)}
                 className="inline-flex items-center px-1.5 py-0.5 border border-border bg-muted text-destructive text-[11px] cursor-pointer font-inherit hover:bg-border"
                 title="Delete"
@@ -98,9 +104,7 @@ export function History() {
               </button>
             </div>
           </div>
-          <div className="text-[13px] leading-relaxed whitespace-pre-wrap">
-            {rec.transcription}
-          </div>
+          <div className="text-[13px] leading-relaxed whitespace-pre-wrap">{rec.transcription}</div>
         </div>
       ))}
     </div>

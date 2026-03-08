@@ -5,6 +5,7 @@
 - Do NOT run builds or start dev servers. Always assume the dev server is already running.
 - The app has two windows: `main` (settings/history) and `pill` (floating status overlay). Only the main window should run the recording flow.
 - `currentWindowLabel` lives in `src/windowLabel.ts` — never put it in App.tsx (causes circular imports).
+- **Always run `pnpm check` (Biome lint + format) and `pnpm typecheck` after making TS/TSX changes.** Fix any errors before considering the task complete. Use `pnpm check:fix` to auto-fix formatting and safe lint issues.
 
 ## Architecture
 

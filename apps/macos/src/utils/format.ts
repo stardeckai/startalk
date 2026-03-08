@@ -15,7 +15,7 @@ export function formatCost(cost: number): string {
 }
 
 export function formatDate(iso: string): string {
-  const d = new Date(iso + 'Z');
+  const d = new Date(`${iso}Z`);
   return d.toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',

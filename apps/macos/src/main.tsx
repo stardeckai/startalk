@@ -1,6 +1,6 @@
-import ReactDOM from 'react-dom/client';
-import { invoke } from '@tauri-apps/api/core';
 import { setFetchImpl } from '@startalk/core';
+import { invoke } from '@tauri-apps/api/core';
+import ReactDOM from 'react-dom/client';
 import App from './App';
 import './App.css';
 
@@ -12,9 +12,13 @@ setFetchImpl(async (input, init) => {
   if (init?.headers) {
     const h = init.headers;
     if (h instanceof Headers) {
-      h.forEach((v, k) => { headers[k] = v; });
+      h.forEach((v, k) => {
+        headers[k] = v;
+      });
     } else if (Array.isArray(h)) {
-      h.forEach(([k, v]) => { headers[k] = v; });
+      h.forEach(([k, v]) => {
+        headers[k] = v;
+      });
     } else {
       Object.assign(headers, h);
     }
@@ -25,6 +29,4 @@ setFetchImpl(async (input, init) => {
   return new Response(text, { status: 200 });
 });
 
-ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-  <App />,
-);
+ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(<App />);

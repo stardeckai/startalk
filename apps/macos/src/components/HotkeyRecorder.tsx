@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { listen } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
 import { Keyboard } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface HotkeyRecorderProps {
   value: string;
@@ -9,16 +9,16 @@ interface HotkeyRecorderProps {
 }
 
 const DISPLAY_MAP: Record<string, string> = {
-  'Globe': '\uD83C\uDF10',
-  'Fn': 'fn',
-  'LCtrl': 'L\u2303',
-  'RCtrl': 'R\u2303',
-  'LAlt': 'L\u2325',
-  'RAlt': 'R\u2325',
-  'LShift': 'L\u21E7',
-  'RShift': 'R\u21E7',
-  'LCmd': 'L\u2318',
-  'RCmd': 'R\u2318',
+  Globe: '\uD83C\uDF10',
+  Fn: 'fn',
+  LCtrl: 'L\u2303',
+  RCtrl: 'R\u2303',
+  LAlt: 'L\u2325',
+  RAlt: 'R\u2325',
+  LShift: 'L\u21E7',
+  RShift: 'R\u21E7',
+  LCmd: 'L\u2318',
+  RCmd: 'R\u2318',
 };
 
 function displayShortcut(shortcut: string): string {
@@ -35,18 +35,21 @@ export function HotkeyRecorder({ value, onChange }: HotkeyRecorderProps) {
   const didCapture = useRef(false);
   const peakMods = useRef('');
 
-  const stopRecording = useCallback(async (newShortcut?: string) => {
-    console.log('[HotkeyRecorder] stopRecording, newShortcut:', newShortcut);
-    setRecording(false);
-    setCurrentModifiers('');
-    didCapture.current = false;
-    peakMods.current = '';
-    if (newShortcut) {
-      await Promise.resolve(onChange(newShortcut));
-    }
-    console.log('[HotkeyRecorder] unpausing hotkey');
-    await invoke('set_hotkey_paused', { paused: false });
-  }, [onChange]);
+  const stopRecording = useCallback(
+    async (newShortcut?: string) => {
+      console.log('[HotkeyRecorder] stopRecording, newShortcut:', newShortcut);
+      setRecording(false);
+      setCurrentModifiers('');
+      didCapture.current = false;
+      peakMods.current = '';
+      if (newShortcut) {
+        await Promise.resolve(onChange(newShortcut));
+      }
+      console.log('[HotkeyRecorder] unpausing hotkey');
+      await invoke('set_hotkey_paused', { paused: false });
+    },
+    [onChange],
+  );
 
   const startRecording = useCallback(async () => {
     console.log('[HotkeyRecorder] startRecording');
@@ -119,11 +122,10 @@ export function HotkeyRecorder({ value, onChange }: HotkeyRecorderProps) {
   return (
     <div data-hotkey-recorder>
       <button
+        type="button"
         onClick={recording ? () => stopRecording() : startRecording}
         className={`w-full px-3 py-2 text-base text-left cursor-pointer font-inherit tracking-widest flex items-center gap-2 ${
-          recording
-            ? 'border-2 border-primary bg-muted'
-            : 'border border-border bg-background'
+          recording ? 'border-2 border-primary bg-muted' : 'border border-border bg-background'
         } text-foreground`}
       >
         <Keyboard size={16} className="shrink-0 text-muted-foreground" />

@@ -1,5 +1,5 @@
-import Database from '@tauri-apps/plugin-sql';
 import type { HistoryRetention } from '@startalk/core';
+import Database from '@tauri-apps/plugin-sql';
 
 const RETENTION_HOURS: Record<HistoryRetention, number> = {
   '24h': 24,
@@ -55,10 +55,7 @@ export async function getRecordings(limit = 50, offset = 0): Promise<Recording[]
 
 export async function getRecordingAudio(id: number): Promise<RecordingAudio | null> {
   const d = await getDb();
-  const rows = await d.select<RecordingAudio[]>(
-    'SELECT audio_base64, audio_type FROM recordings WHERE id = $1',
-    [id],
-  );
+  const rows = await d.select<RecordingAudio[]>('SELECT audio_base64, audio_type FROM recordings WHERE id = $1', [id]);
   return rows[0] ?? null;
 }
 
@@ -70,9 +67,6 @@ export async function deleteRecording(id: number): Promise<void> {
 export async function cleanupOldRecordings(retention: HistoryRetention): Promise<number> {
   const hours = RETENTION_HOURS[retention];
   const d = await getDb();
-  const result = await d.execute(
-    `DELETE FROM recordings WHERE created_at < datetime('now', $1)`,
-    [`-${hours} hours`],
-  );
+  const result = await d.execute(`DELETE FROM recordings WHERE created_at < datetime('now', $1)`, [`-${hours} hours`]);
   return result.rowsAffected;
 }

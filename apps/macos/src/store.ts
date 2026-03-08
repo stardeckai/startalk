@@ -1,5 +1,5 @@
+import { type AppConfig, DEFAULT_CONFIG } from '@startalk/core';
 import { create } from 'zustand';
-import { DEFAULT_CONFIG, type AppConfig } from '@startalk/core';
 
 interface AppState {
   config: AppConfig;
@@ -22,8 +22,7 @@ export const useAppStore = create<AppState>((set) => ({
   lastTranscription: '',
   error: null,
 
-  setConfig: (partial) =>
-    set((state) => ({ config: { ...state.config, ...partial } })),
+  setConfig: (partial) => set((state) => ({ config: { ...state.config, ...partial } })),
   setRecording: (isRecording) => set({ isRecording }),
   setProcessing: (isProcessing) => set({ isProcessing }),
   setLastTranscription: (lastTranscription) => set({ lastTranscription }),

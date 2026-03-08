@@ -15,7 +15,7 @@
   --color-warning: oklch(0.6297 0.1361 73.45);
   --color-accent-blue: oklch(0.7431 0.0391 258.37);
 
-  --font-sans: 'Wix Madefor Text', -apple-system, system-ui, sans-serif;
+  --font-sans: "Wix Madefor Text", -apple-system, system-ui, sans-serif;
 }
 
 body {
@@ -47,6 +47,13 @@ body {
 
 /* Pulse animation for StatusPill */
 @keyframes pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.5; transform: scale(0.85); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
 }
