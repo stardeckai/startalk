@@ -69,6 +69,7 @@ export function useRecordingFlow() {
       }
 
       try {
+        const recDurationMs = Date.now() - recordingStart.current;
         setRecording(false);
         setProcessing(true);
         setPillState('processing');
@@ -76,8 +77,11 @@ export function useRecordingFlow() {
         await setTrayState('processing');
 
         const blob = await recorder.current.stop();
-        console.log(`[StarTalk] Recorded ${blob.size} bytes (${blob.type})`);
+        console.log(`[StarTalk] Recorded ${blob.size} bytes (${blob.type}), duration: ${recDurationMs}ms`);
+
+        let t0 = Date.now();
         const base64 = await blobToBase64(blob);
+        console.log(`[StarTalk] Base64 encoding: ${Date.now() - t0}ms (${base64.length} chars)`);
 
         const mediaType = blob.type.startsWith('audio/webm')
           ? 'audio/webm'
@@ -87,22 +91,22 @@ export function useRecordingFlow() {
 
         const audio: AudioData = { base64, mediaType };
 
-        console.log('[StarTalk] Sending to OpenRouter for transcription, apiKey:', config.apiKey ? `${config.apiKey.slice(0, 8)}...` : '(empty)');
+        console.log('[StarTalk] Sending to OpenRouter for transcription...');
+        t0 = Date.now();
         const result = await transcribe(audio, {
           apiKey: config.apiKey,
           model: config.model,
           prompt: config.transcriptionPrompt,
         });
+        console.log(`[StarTalk] Transcription complete: "${result.text}" (API: ${Date.now() - t0}ms, model reported: ${result.durationMs}ms)`);
 
-        console.log(`[StarTalk] Transcription: "${result.text}" (${result.durationMs}ms)`);
         if (result.text) {
           setLastTranscription(result.text);
           await injectText(result.text);
           // Save to history
-          const recDuration = Date.now() - recordingStart.current;
-          console.log(`[StarTalk] Saving recording: ${recDuration}ms, ${base64.length} chars`);
+          console.log(`[StarTalk] Saving recording: ${recDurationMs}ms, ${base64.length} chars`);
           try {
-            await saveRecording(recDuration, result.text, base64, mediaType);
+            await saveRecording(recDurationMs, result.text, base64, mediaType);
             console.log('[StarTalk] Recording saved to DB');
             await invoke('emit_recording_saved');
           } catch (saveErr) {
