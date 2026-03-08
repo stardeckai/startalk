@@ -13,7 +13,40 @@ function escapeForAppleScript(str: string): string {
   return `"${escaped}"`;
 }
 
+async function switchToEnglishInput(): Promise<string | null> {
+  try {
+    // Get current input source ID
+    const current = await runOsascript(
+      'tell application "System Events" to get input source id of current input source',
+    );
+    // If already English, no switch needed
+    if (current.includes('ABC') || current.includes('US') || current.includes('British') || current.includes('Australian') || current.includes('English')) {
+      return null;
+    }
+    // Switch to ABC (standard English) input source
+    await runOsascript(
+      'tell application "System Events" to tell (first input source whose input source id is "com.apple.keylayout.ABC") to select',
+    );
+    return current;
+  } catch {
+    return null;
+  }
+}
+
+async function restoreInputSource(sourceId: string): Promise<void> {
+  try {
+    await runOsascript(
+      `tell application "System Events" to tell (first input source whose input source id is ${escapeForAppleScript(sourceId)}) to select`,
+    );
+  } catch {
+    // Best-effort restore
+  }
+}
+
 export async function injectText(text: string): Promise<void> {
+  // Switch to English input source so Cmd+V works correctly
+  const prevInputSource = await switchToEnglishInput();
+
   // Save current clipboard
   let prevClipboard = '';
   try {
@@ -30,9 +63,9 @@ export async function injectText(text: string): Promise<void> {
     'tell application "System Events" to keystroke "v" using command down',
   );
 
-  // Restore clipboard after a short delay
-  if (prevClipboard) {
-    setTimeout(async () => {
+  // Restore clipboard and input source after a short delay
+  setTimeout(async () => {
+    if (prevClipboard) {
       try {
         await runOsascript(
           `set the clipboard to ${escapeForAppleScript(prevClipboard)}`,
@@ -40,6 +73,9 @@ export async function injectText(text: string): Promise<void> {
       } catch {
         // Best-effort restore
       }
-    }, 300);
-  }
+    }
+    if (prevInputSource) {
+      await restoreInputSource(prevInputSource);
+    }
+  }, 300);
 }

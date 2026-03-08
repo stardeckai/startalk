@@ -27,6 +27,8 @@ export function useRecordingFlow() {
     const recorder = useRef(new AudioRecorder());
     const recordingStart = useRef<number>(0);
     const handling = useRef(false);
+    const starting = useRef(false);
+    const releasedEarly = useRef(false);
 
     useEffect(() => {
         console.log(
@@ -52,9 +54,20 @@ export function useRecordingFlow() {
             }
             try {
                 setError(null);
+                starting.current = true;
+                releasedEarly.current = false;
                 await recorder.current.start();
                 // Small delay for audio pipeline to stabilize — audio is already being captured
                 await new Promise((r) => setTimeout(r, 300));
+                starting.current = false;
+
+                // If user released during startup, cancel immediately
+                if (releasedEarly.current) {
+                    console.log("[StarTalk] Released during startup — cancelling");
+                    try { await recorder.current.stop(); } catch {}
+                    return;
+                }
+
                 playStartSound();
                 setRecording(true);
                 setPillState("recording");
@@ -62,6 +75,7 @@ export function useRecordingFlow() {
                 recordingStart.current = Date.now();
                 console.log("[StarTalk] Recording started");
             } catch (e) {
+                starting.current = false;
                 setError(`Failed to start recording: ${e}`);
                 setRecording(false);
                 setPillState("idle");
@@ -71,6 +85,12 @@ export function useRecordingFlow() {
 
         const handleReleased = async () => {
             console.log("[StarTalk] Hotkey released");
+            // If still acquiring mic, flag early release so handlePressed can cancel
+            if (starting.current) {
+                console.log("[StarTalk] Released during mic acquisition");
+                releasedEarly.current = true;
+                return;
+            }
             if (!recorder.current.isRecording || handling.current) return;
             handling.current = true;
 

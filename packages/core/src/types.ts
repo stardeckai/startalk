@@ -4,7 +4,7 @@ export interface AudioData {
 }
 
 export interface VocabularyEntry {
-  spoken: string;
+  spoken?: string;
   correct: string;
 }
 

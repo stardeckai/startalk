@@ -22,12 +22,24 @@ function buildPrompt(
     const parts: string[] = [SYSTEM_PROMPT];
 
     if (vocabulary && vocabulary.length > 0) {
-        const entries = vocabulary
-            .map((v) => `"${v.spoken}" → "${v.correct}"`)
-            .join("\n");
-        parts.push(
-            `When you hear any of the following words or phrases, use the corrected spelling:\n${entries}`,
-        );
+        const corrections = vocabulary.filter((v) => v.spoken);
+        const knownWords = vocabulary.filter((v) => !v.spoken);
+
+        if (knownWords.length > 0) {
+            const words = knownWords.map((v) => `"${v.correct}"`).join(", ");
+            parts.push(
+                `The following words/phrases are used frequently — always use this exact spelling: ${words}`,
+            );
+        }
+
+        if (corrections.length > 0) {
+            const entries = corrections
+                .map((v) => `"${v.spoken}" → "${v.correct}"`)
+                .join("\n");
+            parts.push(
+                `When you hear any of the following words or phrases, use the corrected spelling:\n${entries}`,
+            );
+        }
     }
 
     if (userPrompt) {

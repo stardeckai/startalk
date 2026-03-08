@@ -52,7 +52,7 @@ export function Vocabulary() {
           onChange={(vocabulary) => updateConfig({ vocabulary })}
         />
         <Field.Description className="text-xs text-muted-foreground mt-1.5">
-          Correct common misheard words. E.g. "star deck" → "Stardeck".
+          Add words you use often, or correct common mishearings.
         </Field.Description>
       </Field.Root>
     </div>
