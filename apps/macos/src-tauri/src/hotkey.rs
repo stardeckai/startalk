@@ -139,6 +139,7 @@ fn update_mods_from_flags(keycode: i64, raw_flags: u64) -> u64 {
 
 pub fn start_monitor<R: Runtime>(app_handle: AppHandle<R>) {
     std::thread::spawn(move || {
+        let status_handle = app_handle.clone();
         let tap = CGEventTap::new(
             CGEventTapLocation::Session,
             CGEventTapPlacement::HeadInsertEventTap,
@@ -208,7 +209,7 @@ pub fn start_monitor<R: Runtime>(app_handle: AppHandle<R>) {
         match tap {
             Ok(tap) => {
                 eprintln!("[StarTalk] CGEventTap created successfully.");
-                let _ = app_handle.emit("hotkey:status", "ok");
+                let _ = status_handle.emit("hotkey:status", "ok");
                 unsafe {
                     let source = tap.mach_port().create_runloop_source(0).unwrap();
                     let run_loop = CFRunLoop::get_current();
@@ -218,7 +219,7 @@ pub fn start_monitor<R: Runtime>(app_handle: AppHandle<R>) {
             }
             Err(_) => {
                 eprintln!("[StarTalk] FAILED to create CGEventTap. Grant Accessibility/Input Monitoring permission.");
-                let _ = app_handle.emit("hotkey:status", "failed");
+                let _ = status_handle.emit("hotkey:status", "failed");
             }
         }
     });
