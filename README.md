@@ -1,6 +1,10 @@
-# StarTalk
+<p align="center">
+  <img src="apps/macos/src/assets/Startalk-Padded-Bg.png" alt="StarTalk" width="128" />
+</p>
 
-Push-to-talk voice transcription for macOS. Hold a hotkey, speak, release — your words appear in whatever app you're typing in.
+<h1 align="center">StarTalk</h1>
+
+<p align="center">Push-to-talk voice transcription for macOS. Hold a hotkey, speak, release — your words appear in whatever app you're typing in.</p>
 
 StarTalk runs as a menu bar app (~3MB) with no Dock icon. It records audio while you hold a global hotkey, sends it to [OpenRouter](https://openrouter.ai) for transcription via Gemini, and pastes the result into your focused input field.
 
