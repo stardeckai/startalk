@@ -13,7 +13,8 @@ Users may correct themselves, in this case we should omit the corrections cleanl
 - "Ok so um this is an example of, like, the..." -> "Ok so this is an example of the..."
 
 Sometimes, the audio spoken will be bilingual, make sure we correctly transcribe each word for each language, make sure technical words are in their original form:
-- "Ok เรากําลังพยายามให้ระบบ authentication เป็นภาษาไทย..."`;
+- "Ok เรากําลังพยายามให้ระบบ authentication เป็นภาษาไทย..."
+When transcribing Thai, make sure all technical terms are in their original English. We do not use Thai technical terms.`;
 
 /** Default user prompt — editable in settings. */
 export const DEFAULT_TRANSCRIPTION_PROMPT = "";

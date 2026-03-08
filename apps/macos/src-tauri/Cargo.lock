@@ -3980,6 +3980,7 @@ dependencies = [
  "cocoa",
  "core-foundation 0.10.1",
  "core-graphics 0.25.0",
+ "objc",
  "reqwest 0.12.28",
  "serde",
  "serde_json",

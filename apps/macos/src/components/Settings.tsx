@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { load, type Store } from '@tauri-apps/plugin-store';
 import { Field } from '@base-ui/react/field';
 import { Select } from '@base-ui/react/select';
-import { Check, ChevronDown, ShieldAlert, Mic, Loader, KeyRound, AlertTriangle, AlertCircle } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight, ShieldAlert, Mic, Loader, KeyRound, AlertTriangle, AlertCircle } from 'lucide-react';
 import { useAppStore } from '../store';
 import { HotkeyRecorder } from './HotkeyRecorder';
 import type { AppConfig, HistoryRetention } from '@startalk/core';
@@ -33,6 +33,7 @@ export function Settings() {
   const isRecording = useAppStore((s) => s.isRecording);
   const isProcessing = useAppStore((s) => s.isProcessing);
   const [hasAccessibility, setHasAccessibility] = useState<boolean | null>(null);
+  const [apiKeyOpen, setApiKeyOpen] = useState(false);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
@@ -98,6 +99,11 @@ export function Settings() {
         <h1 className="text-lg font-light text-foreground">StarTalk</h1>
       </div>
 
+      {/* Instructions */}
+      <div className="px-4 py-3 text-[13px] text-muted-foreground border-b border-border">
+        Hold <strong className="text-foreground">{config.hotkey || 'Globe'}</strong> to record, release to transcribe into the focused input.
+      </div>
+
       {/* Alerts — full-bleed borders */}
       {hasAccessibility === false && (
         <div className="flex items-start gap-3 px-4 py-3 text-[13px] text-destructive bg-destructive/10 border-b border-destructive/20">
@@ -139,19 +145,6 @@ export function Settings() {
 
       {/* Form fields */}
       <div className="px-4 py-4 space-y-4">
-        <Field.Root>
-          <Field.Label className="block mb-1.5 text-[13px] font-medium text-muted-foreground">
-            <span className="flex items-center gap-1.5"><KeyRound size={13} /> OpenRouter API Key</span>
-          </Field.Label>
-          <input
-            type="text"
-            value={config.apiKey}
-            onChange={(e) => updateConfig({ apiKey: e.target.value })}
-            placeholder="sk-or-..."
-            className={inputClassName}
-          />
-        </Field.Root>
-
         <Field.Root>
           <Field.Label className="block mb-1.5 text-[13px] font-medium text-muted-foreground">Model</Field.Label>
           <input
@@ -218,6 +211,30 @@ export function Settings() {
           </div>
         </div>
       )}
+
+      {/* API Key — collapsible at bottom */}
+      <div className="border-t border-border">
+        <button
+          onClick={() => setApiKeyOpen(!apiKeyOpen)}
+          className="w-full flex items-center gap-2 px-4 py-3 text-[13px] font-medium text-muted-foreground bg-transparent border-none cursor-pointer font-inherit hover:text-foreground"
+        >
+          <ChevronRight size={12} className={`transition-transform duration-200 ${apiKeyOpen ? 'rotate-90' : ''}`} />
+          <KeyRound size={13} />
+          OpenRouter API Key
+          {config.apiKey && <span className="ml-auto text-xs text-muted-foreground/60">••••{config.apiKey.slice(-4)}</span>}
+        </button>
+        {apiKeyOpen && (
+          <div className="px-4 pb-3">
+            <input
+              type="password"
+              value={config.apiKey}
+              onChange={(e) => updateConfig({ apiKey: e.target.value })}
+              placeholder="sk-or-..."
+              className={inputClassName}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
