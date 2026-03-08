@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { listen } from '@tauri-apps/api/event';
+import { Play, Square, Copy, Trash2 } from 'lucide-react';
 import { getRecordings, getRecordingAudio, deleteRecording, type Recording } from '../db';
 import { formatDate, formatDuration, formatSize } from '../utils/format';
 
@@ -59,68 +60,45 @@ export function History() {
 
   if (recordings.length === 0) {
     return (
-      <div
-        style={{
-          padding: 24,
-          color: 'var(--muted-foreground)',
-          textAlign: 'center',
-          marginTop: 40,
-        }}
-      >
+      <div className="px-4 py-10 text-muted-foreground text-center text-[13px]">
         No recordings yet. Use your push-to-talk hotkey to get started.
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '0 16px 16px' }}>
+    <div className="divide-y divide-border">
       {recordings.map((rec) => (
-        <div
-          key={rec.id}
-          style={{
-            padding: 12,
-            borderRadius: 'var(--radius)',
-            border: '1px solid var(--border)',
-            marginBottom: 8,
-            background: 'var(--background)',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 6,
-            }}
-          >
-            <span style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>
+        <div key={rec.id} className="px-4 py-3">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs text-muted-foreground">
               {formatDate(rec.created_at)} · {formatDuration(rec.duration_ms)} · {formatSize(rec.audio_size)}
             </span>
-            <div style={{ display: 'flex', gap: 4 }}>
+            <div className="flex gap-1">
               <button
                 onClick={() => handlePlay(rec)}
-                style={pillBtnStyle}
+                className="inline-flex items-center px-1.5 py-0.5 border border-border bg-muted text-foreground text-[11px] cursor-pointer font-inherit hover:bg-border"
                 title={playingId === rec.id ? 'Stop' : 'Play'}
               >
-                {playingId === rec.id ? '\u25A0' : '\u25B6'}
+                {playingId === rec.id ? <Square size={10} /> : <Play size={10} />}
               </button>
               <button
                 onClick={() => handleCopy(rec.transcription)}
-                style={pillBtnStyle}
+                className="inline-flex items-center px-1.5 py-0.5 border border-border bg-muted text-foreground text-[11px] cursor-pointer font-inherit hover:bg-border"
                 title="Copy"
               >
-                Copy
+                <Copy size={10} />
               </button>
               <button
                 onClick={() => handleDelete(rec.id)}
-                style={{ ...pillBtnStyle, color: 'var(--destructive)' }}
+                className="inline-flex items-center px-1.5 py-0.5 border border-border bg-muted text-destructive text-[11px] cursor-pointer font-inherit hover:bg-border"
                 title="Delete"
               >
-                Del
+                <Trash2 size={10} />
               </button>
             </div>
           </div>
-          <div style={{ fontSize: 13, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+          <div className="text-[13px] leading-relaxed whitespace-pre-wrap">
             {rec.transcription}
           </div>
         </div>
@@ -128,14 +106,3 @@ export function History() {
     </div>
   );
 }
-
-const pillBtnStyle: React.CSSProperties = {
-  padding: '2px 8px',
-  borderRadius: 4,
-  border: '1px solid var(--border)',
-  background: 'var(--muted)',
-  color: 'var(--foreground)',
-  fontSize: 11,
-  cursor: 'pointer',
-  fontFamily: 'inherit',
-};

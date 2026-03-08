@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { load, type Store } from '@tauri-apps/plugin-store';
+import { Field } from '@base-ui/react/field';
+import { Select } from '@base-ui/react/select';
+import { Check, ChevronDown, ShieldAlert, Mic, Loader, KeyRound, AlertTriangle, AlertCircle } from 'lucide-react';
 import { useAppStore } from '../store';
 import { HotkeyRecorder } from './HotkeyRecorder';
 import type { AppConfig, HistoryRetention } from '@startalk/core';
+import startalkIcon from '../assets/Startalk.png';
 
 let storePromise: Promise<Store> | null = null;
 function getStore() {
@@ -13,16 +17,13 @@ function getStore() {
   return storePromise;
 }
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '8px 12px',
-  borderRadius: 'var(--radius)',
-  border: '1px solid var(--border)',
-  fontSize: 14,
-  boxSizing: 'border-box',
-  background: 'var(--background)',
-  color: 'var(--foreground)',
-};
+const retentionOptions = [
+  { label: '24 hours', value: '24h' },
+  { label: '3 days', value: '3d' },
+  { label: '7 days', value: '7d' },
+] as const;
+
+const inputClassName = 'w-full px-3 py-2 border border-border text-sm bg-background text-foreground font-inherit outline-none focus:border-primary';
 
 export function Settings() {
   const config = useAppStore((s) => s.config);
@@ -90,166 +91,138 @@ export function Settings() {
   );
 
   return (
-    <div style={{ padding: 24 }}>
-      <h1 style={{ fontSize: 20, marginBottom: 20, color: 'var(--foreground)' }}>
-        StarTalk Settings
-      </h1>
+    <div>
+      {/* Title block */}
+      <div className="border-b border-border px-4 py-4 flex items-center gap-3">
+        <img src={startalkIcon} alt="StarTalk" className="h-8 w-auto" />
+        <h1 className="text-lg font-light text-foreground">StarTalk</h1>
+      </div>
 
+      {/* Alerts — full-bleed borders */}
       {hasAccessibility === false && (
-        <div
-          style={{
-            padding: 12,
-            background: 'color-mix(in oklch, var(--destructive) 10%, transparent)',
-            borderRadius: 'var(--radius)',
-            marginBottom: 16,
-            fontSize: 13,
-            color: 'var(--destructive)',
-            border: '1px solid color-mix(in oklch, var(--destructive) 20%, transparent)',
-          }}
-        >
-          <strong>Accessibility permission required.</strong> StarTalk needs this to
-          detect global hotkeys and type text.
-          <br />
-          Go to <strong>System Settings → Privacy & Security → Accessibility</strong> and
-          enable StarTalk. You may need to restart the app after granting permission.
+        <div className="flex items-start gap-3 px-4 py-3 text-[13px] text-destructive bg-destructive/10 border-b border-destructive/20">
+          <ShieldAlert size={16} className="shrink-0 mt-0.5" />
+          <div>
+            <strong>Accessibility permission required.</strong> StarTalk needs this to
+            detect global hotkeys and type text.
+            <br />
+            Go to <strong>System Settings → Privacy & Security → Accessibility</strong> and
+            enable StarTalk. You may need to restart the app after granting permission.
+          </div>
         </div>
       )}
 
       {(isRecording || isProcessing) && (
-        <div
-          style={{
-            padding: 12,
-            background: isRecording
-              ? 'color-mix(in oklch, var(--success) 10%, transparent)'
-              : 'color-mix(in oklch, var(--accent-blue) 15%, transparent)',
-            borderRadius: 'var(--radius)',
-            marginBottom: 16,
-            fontSize: 13,
-            fontWeight: 500,
-            color: isRecording ? 'var(--success)' : 'var(--accent-blue)',
-            border: isRecording
-              ? '1px solid color-mix(in oklch, var(--success) 20%, transparent)'
-              : '1px solid color-mix(in oklch, var(--accent-blue) 25%, transparent)',
-          }}
-        >
+        <div className={`flex items-center gap-2 px-4 py-3 text-[13px] font-medium border-b ${
+          isRecording
+            ? 'text-success bg-success/10 border-success/20'
+            : 'text-accent-blue bg-accent-blue/15 border-accent-blue/25'
+        }`}>
+          {isRecording ? <Mic size={14} /> : <Loader size={14} className="animate-spin" />}
           {isRecording ? 'Recording... release to transcribe' : 'Transcribing...'}
         </div>
       )}
 
-      <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'block', marginBottom: 4, fontWeight: 500 }}>
-          OpenRouter API Key
-        </label>
-        <input
-          type="text"
-          value={config.apiKey}
-          onChange={(e) => updateConfig({ apiKey: e.target.value })}
-          placeholder="sk-or-..."
-          style={inputStyle}
-        />
-      </div>
-
-      <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'block', marginBottom: 4, fontWeight: 500 }}>
-          Model
-        </label>
-        <input
-          type="text"
-          value={config.model}
-          onChange={(e) => updateConfig({ model: e.target.value })}
-          style={inputStyle}
-        />
-      </div>
-
-      <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'block', marginBottom: 4, fontWeight: 500 }}>
-          Push-to-Talk Hotkey
-        </label>
-        <HotkeyRecorder
-          value={config.hotkey}
-          onChange={(shortcut) => updateConfig({ hotkey: shortcut })}
-        />
-        <small style={{ color: 'var(--muted-foreground)' }}>
-          Click, then hold your desired modifier combo for 1 second.
-          {hasAccessibility === false && ' (Requires accessibility permission)'}
-        </small>
-      </div>
-
-      <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'block', marginBottom: 4, fontWeight: 500 }}>
-          History Retention
-        </label>
-        <select
-          value={config.historyRetention ?? '24h'}
-          onChange={(e) => updateConfig({ historyRetention: e.target.value as HistoryRetention })}
-          style={inputStyle}
-        >
-          <option value="24h">24 hours</option>
-          <option value="3d">3 days</option>
-          <option value="7d">7 days</option>
-        </select>
-      </div>
-
-      <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'block', marginBottom: 4, fontWeight: 500 }}>
-          Transcription Prompt
-        </label>
-        <textarea
-          value={config.transcriptionPrompt}
-          onChange={(e) => updateConfig({ transcriptionPrompt: e.target.value })}
-          rows={3}
-          style={{ ...inputStyle, resize: 'vertical' }}
-        />
-      </div>
-
       {!config.apiKey && (
-        <div
-          style={{
-            padding: 12,
-            background: 'color-mix(in oklch, var(--warning) 10%, transparent)',
-            borderRadius: 'var(--radius)',
-            marginBottom: 16,
-            fontSize: 13,
-            color: 'var(--warning)',
-            border: '1px solid color-mix(in oklch, var(--warning) 20%, transparent)',
-          }}
-        >
+        <div className="flex items-center gap-2 px-4 py-3 text-[13px] text-warning bg-warning/10 border-b border-warning/20">
+          <AlertTriangle size={14} className="shrink-0" />
           Enter your OpenRouter API key to start using StarTalk.
         </div>
       )}
 
       {error && (
-        <div
-          style={{
-            padding: 12,
-            background: 'color-mix(in oklch, var(--destructive) 10%, transparent)',
-            borderRadius: 'var(--radius)',
-            marginBottom: 16,
-            fontSize: 13,
-            color: 'var(--destructive)',
-            border: '1px solid color-mix(in oklch, var(--destructive) 20%, transparent)',
-          }}
-        >
+        <div className="flex items-center gap-2 px-4 py-3 text-[13px] text-destructive bg-destructive/10 border-b border-destructive/20">
+          <AlertCircle size={14} className="shrink-0" />
           {error}
         </div>
       )}
 
-      {lastTranscription && (
-        <div style={{ marginTop: 16 }}>
-          <label style={{ display: 'block', marginBottom: 4, fontWeight: 500 }}>
-            Last Transcription
-          </label>
-          <div
-            style={{
-              padding: 12,
-              background: 'var(--muted)',
-              borderRadius: 'var(--radius)',
-              fontSize: 13,
-              whiteSpace: 'pre-wrap',
-              color: 'var(--foreground)',
-              border: '1px solid var(--border)',
-            }}
+      {/* Form fields */}
+      <div className="px-4 py-4 space-y-4">
+        <Field.Root>
+          <Field.Label className="block mb-1.5 text-[13px] font-medium text-muted-foreground">
+            <span className="flex items-center gap-1.5"><KeyRound size={13} /> OpenRouter API Key</span>
+          </Field.Label>
+          <input
+            type="text"
+            value={config.apiKey}
+            onChange={(e) => updateConfig({ apiKey: e.target.value })}
+            placeholder="sk-or-..."
+            className={inputClassName}
+          />
+        </Field.Root>
+
+        <Field.Root>
+          <Field.Label className="block mb-1.5 text-[13px] font-medium text-muted-foreground">Model</Field.Label>
+          <input
+            type="text"
+            value={config.model}
+            onChange={(e) => updateConfig({ model: e.target.value })}
+            className={inputClassName}
+          />
+        </Field.Root>
+
+        <Field.Root>
+          <Field.Label className="block mb-1.5 text-[13px] font-medium text-muted-foreground">Push-to-Talk Hotkey</Field.Label>
+          <HotkeyRecorder
+            value={config.hotkey}
+            onChange={(shortcut) => updateConfig({ hotkey: shortcut })}
+          />
+          <Field.Description className="text-xs text-muted-foreground mt-1.5">
+            Click, then hold your desired modifier combo for 1 second.
+            {hasAccessibility === false && ' (Requires accessibility permission)'}
+          </Field.Description>
+        </Field.Root>
+
+        <Field.Root>
+          <Field.Label className="block mb-1.5 text-[13px] font-medium text-muted-foreground">History Retention</Field.Label>
+          <Select.Root
+            value={config.historyRetention ?? '24h'}
+            onValueChange={(val) => updateConfig({ historyRetention: val as HistoryRetention })}
           >
+            <Select.Trigger className={`${inputClassName} flex items-center justify-between cursor-pointer`}>
+              <Select.Value placeholder="Select..." />
+              <Select.Icon><ChevronDown size={14} /></Select.Icon>
+            </Select.Trigger>
+            <Select.Portal>
+              <Select.Positioner sideOffset={4}>
+                <Select.Popup className="select-popup">
+                  <Select.List>
+                    {retentionOptions.map(({ label, value }) => (
+                      <Select.Item
+                        key={value}
+                        value={value}
+                        className="flex items-center gap-2 px-2 py-1.5 text-[13px] cursor-pointer outline-none data-[highlighted]:bg-muted"
+                      >
+                        <Select.ItemIndicator className="w-4 flex items-center justify-center">
+                          <Check size={12} />
+                        </Select.ItemIndicator>
+                        <Select.ItemText>{label}</Select.ItemText>
+                      </Select.Item>
+                    ))}
+                  </Select.List>
+                </Select.Popup>
+              </Select.Positioner>
+            </Select.Portal>
+          </Select.Root>
+        </Field.Root>
+
+        <Field.Root>
+          <Field.Label className="block mb-1.5 text-[13px] font-medium text-muted-foreground">Transcription Prompt</Field.Label>
+          <textarea
+            value={config.transcriptionPrompt}
+            onChange={(e) => updateConfig({ transcriptionPrompt: e.target.value })}
+            rows={3}
+            className={`${inputClassName} resize-y`}
+          />
+        </Field.Root>
+      </div>
+
+      {/* Last transcription */}
+      {lastTranscription && (
+        <div className="border-t border-border px-4 py-3">
+          <label className="block mb-1.5 text-[13px] font-medium text-muted-foreground">Last Transcription</label>
+          <div className="px-3 py-2 bg-muted text-[13px] whitespace-pre-wrap text-foreground border border-border">
             {lastTranscription}
           </div>
         </div>

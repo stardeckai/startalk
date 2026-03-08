@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { Tabs } from '@base-ui/react/tabs';
+import { Settings as SettingsIcon, Clock } from 'lucide-react';
 import { Settings } from './components/Settings';
 import { History } from './components/History';
 import { StatusPill } from './components/StatusPill';
@@ -7,47 +8,29 @@ import { currentWindowLabel } from './windowLabel';
 
 console.log('[StarTalk] Window label:', currentWindowLabel);
 
-type Tab = 'settings' | 'history';
-
 function MainApp() {
   useRecordingFlow();
-  const [tab, setTab] = useState<Tab>('settings');
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-      <div
-        style={{
-          display: 'flex',
-          borderBottom: '1px solid var(--border)',
-          padding: '0 16px',
-          flexShrink: 0,
-        }}
-      >
-        {(['settings', 'history'] as Tab[]).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            style={{
-              padding: '10px 16px',
-              border: 'none',
-              borderBottom: tab === t ? '2px solid var(--primary)' : '2px solid transparent',
-              background: 'none',
-              color: tab === t ? 'var(--foreground)' : 'var(--muted-foreground)',
-              fontWeight: tab === t ? 600 : 400,
-              fontSize: 13,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              textTransform: 'capitalize',
-            }}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
-      <div style={{ flex: 1, overflow: 'auto' }}>
-        {tab === 'settings' ? <Settings /> : <History />}
-      </div>
-    </div>
+    <Tabs.Root defaultValue="settings" className="flex flex-col h-screen">
+      <Tabs.List className="relative flex shrink-0 border-b border-border px-4">
+        <Tabs.Tab value="settings" className="flex items-center gap-1.5 px-4 py-2.5 border-none bg-transparent text-muted-foreground text-[13px] cursor-pointer font-inherit data-[selected]:text-foreground data-[selected]:font-semibold">
+          <SettingsIcon size={14} />
+          Settings
+        </Tabs.Tab>
+        <Tabs.Tab value="history" className="flex items-center gap-1.5 px-4 py-2.5 border-none bg-transparent text-muted-foreground text-[13px] cursor-pointer font-inherit data-[selected]:text-foreground data-[selected]:font-semibold">
+          <Clock size={14} />
+          History
+        </Tabs.Tab>
+        <Tabs.Indicator className="tab-indicator" />
+      </Tabs.List>
+      <Tabs.Panel value="settings" className="flex-1 overflow-auto">
+        <Settings />
+      </Tabs.Panel>
+      <Tabs.Panel value="history" className="flex-1 overflow-auto">
+        <History />
+      </Tabs.Panel>
+    </Tabs.Root>
   );
 }
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
+import { Keyboard } from 'lucide-react';
 
 interface HotkeyRecorderProps {
   value: string;
@@ -41,8 +42,6 @@ export function HotkeyRecorder({ value, onChange }: HotkeyRecorderProps) {
     didCapture.current = false;
     peakMods.current = '';
     if (newShortcut) {
-      // Call onChange and wait for it to complete before unpausing,
-      // so update_shortcut runs before set_hotkey_paused(false)
       await Promise.resolve(onChange(newShortcut));
     }
     console.log('[HotkeyRecorder] unpausing hotkey');
@@ -59,7 +58,6 @@ export function HotkeyRecorder({ value, onChange }: HotkeyRecorderProps) {
     console.log('[HotkeyRecorder] paused hotkey');
   }, []);
 
-  // Listen for modifier events — track peak state, capture on full release
   useEffect(() => {
     if (!recording) return;
 
@@ -72,14 +70,12 @@ export function HotkeyRecorder({ value, onChange }: HotkeyRecorderProps) {
       setCurrentModifiers(mods);
 
       if (mods) {
-        // Track the peak (most modifiers held at once)
         const currentCount = mods.split('+').length;
         const peakCount = peakMods.current ? peakMods.current.split('+').length : 0;
         if (currentCount >= peakCount) {
           peakMods.current = mods;
         }
       } else if (peakMods.current) {
-        // All modifiers released — capture the peak combo
         didCapture.current = true;
         stopRecording(peakMods.current);
       }
@@ -91,7 +87,6 @@ export function HotkeyRecorder({ value, onChange }: HotkeyRecorderProps) {
     };
   }, [recording, stopRecording]);
 
-  // Escape key / click outside to cancel
   useEffect(() => {
     if (!recording) return;
 
@@ -125,21 +120,13 @@ export function HotkeyRecorder({ value, onChange }: HotkeyRecorderProps) {
     <div data-hotkey-recorder>
       <button
         onClick={recording ? () => stopRecording() : startRecording}
-        style={{
-          width: '100%',
-          padding: '8px 12px',
-          borderRadius: 'var(--radius)',
-          border: recording ? '2px solid var(--primary)' : '1px solid var(--border)',
-          fontSize: 16,
-          background: recording ? 'var(--muted)' : 'var(--background)',
-          color: 'var(--foreground)',
-          cursor: 'pointer',
-          textAlign: 'left',
-          fontFamily: 'inherit',
-          boxSizing: 'border-box',
-          letterSpacing: 2,
-        }}
+        className={`w-full px-3 py-2 text-base text-left cursor-pointer font-inherit tracking-widest flex items-center gap-2 ${
+          recording
+            ? 'border-2 border-primary bg-muted'
+            : 'border border-border bg-background'
+        } text-foreground`}
       >
+        <Keyboard size={16} className="shrink-0 text-muted-foreground" />
         {recording
           ? currentModifiers
             ? displayShortcut(currentModifiers)
