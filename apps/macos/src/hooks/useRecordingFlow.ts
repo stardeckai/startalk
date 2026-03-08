@@ -104,6 +104,7 @@ export function useRecordingFlow() {
           apiKey: config.apiKey,
           model: config.model,
           prompt: config.transcriptionPrompt,
+          vocabulary: config.vocabulary,
         });
         console.log(`[StarTalk] Transcription complete: "${result.text}" (API: ${Date.now() - t0}ms, model reported: ${result.durationMs}ms)`);
 

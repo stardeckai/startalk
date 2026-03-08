@@ -207,15 +207,6 @@ export function Settings() {
           </Select.Root>
         </Field.Root>
 
-        <Field.Root>
-          <Field.Label className="block mb-1.5 text-[13px] font-medium text-muted-foreground">Transcription Prompt</Field.Label>
-          <textarea
-            value={config.transcriptionPrompt}
-            onChange={(e) => updateConfig({ transcriptionPrompt: e.target.value })}
-            rows={3}
-            className={`${inputClassName} resize-y`}
-          />
-        </Field.Root>
       </div>
 
       {/* Last transcription */}

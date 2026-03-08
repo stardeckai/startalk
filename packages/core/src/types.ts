@@ -3,11 +3,17 @@ export interface AudioData {
   mediaType: 'audio/webm' | 'audio/wav' | 'audio/mp4';
 }
 
+export interface VocabularyEntry {
+  spoken: string;
+  correct: string;
+}
+
 export interface TranscriptionOptions {
   apiKey: string;
   model?: string;
   language?: string;
   prompt?: string;
+  vocabulary?: VocabularyEntry[];
 }
 
 export interface TranscriptionResult {
@@ -23,4 +29,5 @@ export interface AppConfig {
   hotkey: string;
   transcriptionPrompt: string;
   historyRetention: HistoryRetention;
+  vocabulary: VocabularyEntry[];
 }
