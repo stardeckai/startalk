@@ -1,7 +1,14 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
-import { Loader, Mic, Sparkles, Star } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { currentMonitor, getCurrentWindow, LogicalPosition, LogicalSize } from '@tauri-apps/api/window';
+import { Loader, Mic, Sparkles } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import startalkMono from '../assets/Startalk-mono.png';
+
+const PILL_W_EXPANDED = 180;
+const PILL_H_EXPANDED = 60;
+const PILL_W_COLLAPSED = 72;
+const PILL_H_COLLAPSED = 24;
 
 type PillState = 'idle' | 'recording' | 'processing' | 'thinking';
 
@@ -43,7 +50,7 @@ const icons: Record<PillState, React.ReactNode> = {
   recording: <Mic size={12} />,
   processing: <Loader size={12} className="animate-spin" />,
   thinking: <Sparkles size={12} />,
-  idle: <Star size={12} />,
+  idle: <img src={startalkMono} alt="" className="w-3 h-3 brightness-0 invert" />,
 };
 
 const labels: Record<PillState, string> = {
@@ -56,7 +63,6 @@ const labels: Record<PillState, string> = {
 export function StatusPill() {
   const [state, setState] = useState<PillState>('idle');
   const [hovered, setHovered] = useState(false);
-  const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     document.documentElement.style.background = 'transparent';
@@ -64,36 +70,57 @@ export function StatusPill() {
   }, []);
 
   useEffect(() => {
-    const unlisten = listen('pill:state', (event) => {
+    const unlistenState = listen('pill:state', (event) => {
       setState(event.payload as PillState);
     });
+    const unlistenHover = listen<boolean>('pill:hover', (event) => {
+      setHovered(event.payload);
+    });
     return () => {
-      unlisten.then((fn) => fn());
+      unlistenState.then((fn) => fn());
+      unlistenHover.then((fn) => fn());
     };
   }, []);
 
   const expanded = state !== 'idle' || hovered;
   const s = pillStyles[state];
 
+  // Resize the actual Tauri window to match visual state.
+  // Grow upward from the bottom edge so the cursor stays inside on hover.
+  const isActive = state !== 'idle';
+  useEffect(() => {
+    const win = getCurrentWindow();
+    const shouldExpand = isActive || hovered;
+    const w = shouldExpand ? PILL_W_EXPANDED : PILL_W_COLLAPSED;
+    const h = shouldExpand ? PILL_H_EXPANDED : PILL_H_COLLAPSED;
+
+    currentMonitor().then((monitor) => {
+      if (!monitor) return;
+      const screen = monitor.size;
+      const scale = monitor.scaleFactor;
+      const screenH = screen.height / scale;
+      // Keep bottom edge fixed at 8px from screen bottom
+      const bottomY = screenH - 8;
+      const x = (screen.width / scale - w) / 2;
+      const y = bottomY - h;
+      // Set position first, then size — keeps bottom edge anchored
+      win.setPosition(new LogicalPosition(x, y));
+      win.setSize(new LogicalSize(w, h));
+    });
+
+    if (!isActive && !hovered) {
+      setHovered(false);
+    }
+  }, [isActive, hovered]);
+
   const handleClick = () => {
     invoke('show_main_window').catch((e) => console.error('Failed to show main window:', e));
-  };
-
-  const handleMouseEnter = () => {
-    if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
-    setHovered(true);
-  };
-
-  const handleMouseLeave = () => {
-    hoverTimeout.current = setTimeout(() => setHovered(false), 300);
   };
 
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: No keyboard interaction in overlay window
     // biome-ignore lint/a11y/noStaticElementInteractions: Overlay window container
     <div
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
       onClick={handleClick}
       title="Open StarTalk Settings"
       className="fixed inset-0 flex flex-col justify-end items-center bg-transparent select-none cursor-pointer"
@@ -109,7 +136,7 @@ export function StatusPill() {
           width: expanded ? 'auto' : '64px',
           height: expanded ? 'auto' : '12px',
           gap: expanded ? '8px' : '0',
-          opacity: expanded ? 1 : 0.5,
+          opacity: expanded ? 1 : 0.7,
         }}
       >
         {expanded && (

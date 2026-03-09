@@ -15,18 +15,54 @@ extern crate objc;
 
 use std::sync::Arc;
 
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 #[cfg(target_os = "macos")]
-fn configure_pill_window(pill: &tauri::WebviewWindow) {
+fn configure_pill_window(app: &tauri::AppHandle, pill: &tauri::WebviewWindow) {
     use cocoa::appkit::NSWindow;
     use cocoa::base::id;
+    use objc::runtime::Class;
+    use std::sync::atomic::{AtomicBool, Ordering};
 
     let ns_win: id = pill.ns_window().unwrap() as id;
     unsafe {
         popover::configure_overlay_window(ns_win);
         ns_win.setHasShadow_(cocoa::base::NO);
         ns_win.setAcceptsMouseMovedEvents_(cocoa::base::YES);
+    }
+
+    // Global mouse-move monitor to detect hover over the pill window.
+    // Non-activating panels don't deliver mouseEnter/mouseLeave to the webview.
+    static PILL_HOVERED: AtomicBool = AtomicBool::new(false);
+    let app2 = app.clone();
+    unsafe {
+        const NS_MOUSE_MOVED_MASK: u64 = 1 << 5;
+        let block = block::ConcreteBlock::new(move |event: id| {
+            let Some(win) = app2.get_webview_window("pill") else {
+                return;
+            };
+            let ns_win: id = win.ns_window().unwrap() as id;
+            let frame: cocoa::foundation::NSRect = msg_send![ns_win, frame];
+            let loc: cocoa::foundation::NSPoint = msg_send![
+                Class::get("NSEvent").unwrap(),
+                mouseLocation
+            ];
+
+            let inside = loc.x >= frame.origin.x
+                && loc.x <= frame.origin.x + frame.size.width
+                && loc.y >= frame.origin.y
+                && loc.y <= frame.origin.y + frame.size.height;
+
+            let was_hovered = PILL_HOVERED.load(Ordering::Relaxed);
+            if inside != was_hovered {
+                PILL_HOVERED.store(inside, Ordering::Relaxed);
+                let _ = app2.emit("pill:hover", inside);
+            }
+        });
+        let block = block.copy();
+        let ns_event_class = Class::get("NSEvent").unwrap();
+        let _: id = msg_send![ns_event_class, addGlobalMonitorForEventsMatchingMask: NS_MOUSE_MOVED_MASK handler: &*block];
+        std::mem::forget(block);
     }
 }
 
@@ -51,14 +87,14 @@ pub fn run() {
                 if let Some(monitor) = pill.current_monitor().ok().flatten() {
                     let screen = monitor.size();
                     let scale = monitor.scale_factor();
-                    let pill_w = 180.0;
-                    let pill_h = 60.0;
+                    let pill_w = 72.0;
+                    let pill_h = 24.0;
                     let x = (screen.width as f64 / scale - pill_w) / 2.0;
                     let y = screen.height as f64 / scale - pill_h - 8.0;
                     let _ = pill.set_position(tauri::LogicalPosition::new(x, y));
                 }
                 #[cfg(target_os = "macos")]
-                configure_pill_window(&pill);
+                configure_pill_window(app.handle(), &pill);
             }
 
             // Minimize main window on close instead of destroying it
